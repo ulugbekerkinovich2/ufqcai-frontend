@@ -3,6 +3,7 @@ dist/
 dist-ssr/
 .parcel-cache/
 *.log
+logs/
 .DS_Store
 .env.local
 .env.*.local

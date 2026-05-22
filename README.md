@@ -12,6 +12,15 @@ npm run dev     # http://localhost:5173 ; /api → backend (vite proxy: 8001)
 npm run build   # production build → dist/
 ```
 
+## PM2 bilan ishga tushirish
+
+```bash
+npm i -g pm2
+npm run build
+pm2 start ecosystem.config.cjs   # serve -s dist -l 5173
+pm2 save && pm2 startup
+```
+
 Backend `localhost:8001` da bo'lishi kerak (`vite.config.ts`'da proxy sozlangan). Boshqa portni xohlasangiz `vite.config.ts` ni o'zgartiring.
 
 ## Sahifalar

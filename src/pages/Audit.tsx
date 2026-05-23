@@ -20,6 +20,7 @@ const ACTION_KEY: Record<string, string> = {
   delete_document: "audit.act.delete_document",
   restore_document: "audit.act.restore_document",
   upload_law: "audit.act.upload_law",
+  delete_user: "audit.act.delete_user",
   enable_2fa: "audit.act.enable_2fa",
   disable_2fa: "audit.act.disable_2fa",
 };

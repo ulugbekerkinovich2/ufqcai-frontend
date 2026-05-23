@@ -30,17 +30,50 @@ export function HighlightedText({
     if (seg) setActive(seg);
   }, [activeId, segments]);
 
+  // AI quote ko'p hollarda matnga aynan mos kelmaydi (tinish belgilari/bo'shliqlar).
+  // char_start/end NULL bo'lsa, quote'ni matn ichidan fuzzy qidiramiz.
+  function findQuotePosition(haystack: string, quote: string): [number, number] | null {
+    if (!quote) return null;
+    const q = quote.trim();
+    if (q.length < 8) return null;
+
+    let idx = haystack.indexOf(q);
+    if (idx >= 0) return [idx, idx + q.length];
+
+    const normQ = q.replace(/\s+/g, " ");
+    // Birinchi 40 belgi bo'yicha
+    const head = normQ.slice(0, Math.min(40, normQ.length));
+    idx = haystack.indexOf(head);
+    if (idx >= 0) return [idx, idx + q.length];
+
+    // Faqat dastlabki 4-5 so'z bo'yicha
+    const firstFew = normQ.split(" ").slice(0, 5).join(" ");
+    if (firstFew.length >= 10) {
+      idx = haystack.indexOf(firstFew);
+      if (idx >= 0) return [idx, Math.min(haystack.length, idx + q.length)];
+    }
+    return null;
+  }
+
   const parts = useMemo(() => {
-    const segs = segments
-      .filter((s) => s.char_start != null && s.char_end != null && s.char_end! > s.char_start!)
-      .sort((a, b) => (a.char_start! - b.char_start!));
+    const enriched = segments
+      .map((s) => {
+        if (s.char_start != null && s.char_end != null && s.char_end > s.char_start) {
+          return { seg: s, start: s.char_start as number, end: s.char_end as number };
+        }
+        const found = findQuotePosition(text, s.quote || "");
+        return found ? { seg: s, start: found[0], end: found[1] } : null;
+      })
+      .filter((x): x is { seg: FlaggedSegment; start: number; end: number } => x !== null)
+      .sort((a, b) => a.start - b.start);
+
     const out: { text: string; seg?: FlaggedSegment }[] = [];
     let cur = 0;
-    for (const s of segs) {
-      if (s.char_start! < cur) continue;
-      if (s.char_start! > cur) out.push({ text: text.slice(cur, s.char_start!) });
-      out.push({ text: text.slice(s.char_start!, s.char_end!), seg: s });
-      cur = s.char_end!;
+    for (const e of enriched) {
+      if (e.start < cur) continue;
+      if (e.start > cur) out.push({ text: text.slice(cur, e.start) });
+      out.push({ text: text.slice(e.start, e.end), seg: e.seg });
+      cur = e.end;
     }
     if (cur < text.length) out.push({ text: text.slice(cur) });
     return out;

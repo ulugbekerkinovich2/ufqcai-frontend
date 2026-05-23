@@ -252,6 +252,9 @@ const UZ: Record<string, string> = {
   "settings.token_current": "Joriy limit",
   "settings.token_zero_hint": "0 kiriting — limit yo'q (cheksiz tahlil). Foydalanuvchi sahifasidan alohida limit ham belgilanadi.",
   "app.copyright": "© 2026 UFQ MChJ. Barcha huquqlar himoyalangan.",
+  "quota.monthly_budget": "Oylik byudjet tugadi. Iltimos, super admin bilan bog'laning.",
+  "quota.user_daily_count": "Siz bugunlik tahlillar sonidan oshib ketdingiz. Ertaga urinib ko'ring.",
+  "quota.user_daily_tokens": "Kunlik token limiti yetdi. Ertaga urinib ko'ring yoki admin bilan bog'laning.",
 };
 
 const RU: Record<string, string> = {
@@ -485,6 +488,9 @@ const RU: Record<string, string> = {
   "settings.token_current": "Текущий лимит",
   "settings.token_zero_hint": "Введите 0 — без лимита. На странице пользователей можно задать индивидуальный лимит.",
   "app.copyright": "© 2026 UFQ MChJ. Все права защищены.",
+  "quota.monthly_budget": "Месячный бюджет исчерпан. Обратитесь к суперадминистратору.",
+  "quota.user_daily_count": "Дневной лимит анализов исчерпан. Попробуйте завтра.",
+  "quota.user_daily_tokens": "Дневной лимит токенов исчерпан. Попробуйте завтра или обратитесь к администратору.",
 };
 
 const EN: Record<string, string> = {
@@ -718,6 +724,9 @@ const EN: Record<string, string> = {
   "settings.token_current": "Current limit",
   "settings.token_zero_hint": "Enter 0 for no limit. Per-user overrides can be set on the Users page.",
   "app.copyright": "© 2026 UFQ MChJ. All rights reserved.",
+  "quota.monthly_budget": "Monthly budget exhausted. Please contact the super admin.",
+  "quota.user_daily_count": "Daily analysis limit reached. Try again tomorrow.",
+  "quota.user_daily_tokens": "Daily token limit reached. Try again tomorrow or contact the admin.",
 };
 
 const MESSAGES: Record<Lang, Record<string, string>> = { uz: UZ, ru: RU, en: EN };

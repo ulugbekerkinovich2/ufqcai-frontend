@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Loader2, FileSearch, BookOpen, Brain, Save } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -9,8 +9,8 @@ interface Step {
   label: string;
   hint: string;
   icon: any;
-  stages: string[];   // backend progress_stage qiymatlari
-  range: [number, number];   // ushbu qadam egallaydigan foiz oralig'i
+  stages: string[];
+  range: [number, number];
 }
 
 interface StatusResp {
@@ -19,6 +19,7 @@ interface StatusResp {
   error_message?: string | null;
   progress_stage?: string | null;
   progress_percent?: number | null;
+  progress_message?: string | null;
 }
 
 function fmtTime(seconds: number): string {
@@ -32,8 +33,10 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
   const { t } = useI18n();
   const qc = useQueryClient();
   const [elapsed, setElapsed] = useState(0);
+  // Smooth display percent — animates toward real percent, never jumps backward
+  const [displayPct, setDisplayPct] = useState(0);
+  const displayPctRef = useRef(0);
 
-  // Backend status'dan real progress
   const statusQ = useQuery({
     queryKey: ["analysis-status", analysisId],
     queryFn: async () => (await api.get<StatusResp>(`/analyses/${analysisId}/status`)).data,
@@ -43,16 +46,33 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
 
   const stage = statusQ.data?.progress_stage || "queued";
   const percent = statusQ.data?.progress_percent ?? 0;
+  const message = statusQ.data?.progress_message || "";
   const statusDone = statusQ.data?.status === "completed" || statusQ.data?.status === "failed";
 
-  // statusQ "completed"/"failed" aniqlasa — parent aQ ni darhol invalidate qil
   useEffect(() => {
     if (statusDone && analysisId) {
       qc.invalidateQueries({ queryKey: ["analysis", analysisId] });
     }
   }, [statusDone, analysisId]);
 
-  // ETA — so'nggi tahlillarning o'rtachasi
+  // Smooth interpolation toward real percent
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const real = percent;
+      const cur = displayPctRef.current;
+      if (cur >= real) return;
+      // During ai_analyzing: crawl forward even without new data
+      const isAI = stage === "ai_analyzing";
+      const step = isAI
+        ? Math.max(0.15, (real - cur) * 0.06)  // slow organic crawl
+        : Math.min(2, (real - cur) * 0.25);     // snappier for fast stages
+      const next = Math.min(real, cur + step);
+      displayPctRef.current = next;
+      setDisplayPct(Math.round(next));
+    }, 250);
+    return () => clearInterval(tick);
+  }, [percent, stage]);
+
   const etaQ = useQuery({
     queryKey: ["analysis-eta"],
     queryFn: async () => (await api.get<{ avg_seconds: number; samples: number }>("/analyses/eta")).data,
@@ -105,12 +125,11 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
   const activeIndex = steps.findIndex((s) => s.stages.includes(stage));
   const active = activeIndex >= 0 ? activeIndex : 0;
 
-  // Joriy qadam ichidagi foiz (0-100)
   function stagePct(s: Step): number {
-    if (percent <= s.range[0]) return 0;
-    if (percent >= s.range[1]) return 100;
+    if (displayPct <= s.range[0]) return 0;
+    if (displayPct >= s.range[1]) return 100;
     const span = s.range[1] - s.range[0];
-    return Math.round(((percent - s.range[0]) / span) * 100);
+    return Math.round(((displayPct - s.range[0]) / span) * 100);
   }
 
   const remaining = Math.max(0, avg - elapsed);
@@ -142,19 +161,31 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
           )}
         </div>
 
-        {/* Umumiy progress bar — backend percent */}
+        {/* Overall progress bar */}
         <div className="mt-5 max-w-md mx-auto">
           <div className="flex items-baseline justify-between mb-1.5">
             <span className="text-[11.5px] text-ink-muted">{t("progress.overall")}</span>
-            <span className="text-[13px] font-mono tabular-nums text-ink font-semibold">{percent}%</span>
+            <span className="text-[13px] font-mono tabular-nums text-ink font-semibold">{displayPct}%</span>
           </div>
           <div className="h-2 w-full bg-surface-sunken rounded-full overflow-hidden">
             <div
-              className="h-full bg-accent rounded-full transition-all duration-700 ease-out"
-              style={{ width: `${percent}%` }}
+              className="h-full bg-accent rounded-full"
+              style={{ width: `${displayPct}%`, transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)" }}
             />
           </div>
         </div>
+
+        {/* Live message from backend */}
+        {message && (
+          <div className="mt-3 max-w-md mx-auto min-h-[1.5rem]">
+            <p
+              key={message}
+              className="text-[12.5px] text-accent animate-fade-in text-center leading-snug"
+            >
+              {message}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="max-w-xl mx-auto space-y-3">
@@ -165,14 +196,14 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
           return (
             <div
               key={s.key}
-              className={`p-3.5 rounded-xl transition-all ${
+              className={`p-3.5 rounded-xl transition-all duration-500 ${
                 current ? "bg-accent-50/60 ring-1 ring-accent/30" :
                 done ? "bg-surface-sunken/50" :
-                "opacity-50"
+                "opacity-40"
               }`}
             >
               <div className="flex items-start gap-3.5">
-                <div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 ${
+                <div className={`h-9 w-9 rounded-xl grid place-items-center shrink-0 transition-all duration-500 ${
                   done ? "bg-accent text-white" :
                   current ? "bg-accent-50 text-accent" :
                   "bg-surface-sunken text-ink-subtle"
@@ -195,14 +226,13 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
                 </div>
               </div>
 
-              {/* Joriy qadam ichidagi progress */}
               {current && (
                 <div className="mt-2.5 ml-[3.125rem]">
                   <div className="h-1 w-full bg-surface-sunken rounded-full overflow-hidden">
                     {pct > 0 ? (
                       <div
-                        className="h-full bg-accent rounded-full transition-all duration-700 ease-out"
-                        style={{ width: `${pct}%` }}
+                        className="h-full bg-accent rounded-full"
+                        style={{ width: `${pct}%`, transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)" }}
                       />
                     ) : (
                       <div className="h-full w-1/3 bg-accent/50 rounded-full animate-pulse-soft" />

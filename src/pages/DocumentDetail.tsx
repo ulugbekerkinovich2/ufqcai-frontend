@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import type { Document, Analysis } from "@/types";
 import { formatDate } from "@/lib/utils";
-import { ArrowLeft, Play, Eye, FileText } from "lucide-react";
+import { ArrowLeft, Play, Eye, FileText, AlertCircle } from "lucide-react";
 import { RiskBadge } from "@/components/shared/RiskBadge";
 import { useI18n } from "@/lib/i18n";
 
@@ -11,6 +12,7 @@ export function DocumentDetail() {
   const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
+  const [analyzeErr, setAnalyzeErr] = useState("");
 
   const docQ = useQuery({
     queryKey: ["doc", id],
@@ -31,7 +33,11 @@ export function DocumentDetail() {
 
   const analyze = useMutation({
     mutationFn: async () => (await api.post<Analysis>(`/documents/${id}/analyze`)).data,
-    onSuccess: (a) => nav(`/analyses/${a.id}`),
+    onSuccess: (a) => { setAnalyzeErr(""); nav(`/analyses/${a.id}`); },
+    onError: (e: any) => {
+      const code: string = e?.response?.data?.detail || "";
+      setAnalyzeErr(t(`quota.${code}`) || t("common.error"));
+    },
   });
 
   if (!docQ.data) return <div className="text-ink-muted">{t("common.loading")}</div>;
@@ -57,14 +63,22 @@ export function DocumentDetail() {
             {d.page_count ? <><span>·</span><span className="tabular-nums">{d.page_count} sahifa</span></> : null}
           </div>
         </div>
-        <button
-          disabled={analyze.isPending || d.status === "error"}
-          onClick={() => analyze.mutate()}
-          className="btn-primary shrink-0"
-        >
-          <Play size={15} strokeWidth={2} fill="currentColor" />
-          {analyze.isPending ? t("doc.starting") : history.length > 0 ? t("doc.reanalyze") : t("doc.analyze")}
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            disabled={analyze.isPending || d.status === "error"}
+            onClick={() => analyze.mutate()}
+            className="btn-primary shrink-0"
+          >
+            <Play size={15} strokeWidth={2} fill="currentColor" />
+            {analyze.isPending ? t("doc.starting") : history.length > 0 ? t("doc.reanalyze") : t("doc.analyze")}
+          </button>
+          {analyzeErr && (
+            <div className="flex items-center gap-1.5 text-[12.5px] text-risk-high-fg animate-fade-in">
+              <AlertCircle size={13} className="shrink-0" />
+              {analyzeErr}
+            </div>
+          )}
+        </div>
       </header>
 
       <div className="card p-7">

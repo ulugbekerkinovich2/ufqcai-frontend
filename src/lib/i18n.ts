@@ -218,6 +218,19 @@ const UZ: Record<string, string> = {
   "audit.act.upload_law": "Qonun yuklash",
   "audit.act.enable_2fa": "2FA yoqildi",
   "audit.act.disable_2fa": "2FA o'chirildi",
+  // settings
+  "nav.settings": "Tizim sozlamalari",
+  "settings.title": "Tizim sozlamalari",
+  "settings.section": "Admin",
+  "settings.strictness": "Tahlil qattiqqo'lligi",
+  "settings.strictness_hint": "AI baholashda qanchalik qattiq yondashuv qo'llashi kerakligini belgilaydi",
+  "settings.level_1": "Yengil",
+  "settings.level_1_desc": "Faqat aniq qoidabuzarliklar — shubhali holatlar Past yoki Yo'q",
+  "settings.level_2": "O'rtacha (standart)",
+  "settings.level_2_desc": "Muvozanatli va adolatli baho — tavsiya etiladi",
+  "settings.level_3": "Qattiq",
+  "settings.level_3_desc": "Potentsial xavflar ham belgilanadi — ehtiyotkor yondashuv",
+  "settings.saved": "Saqlandi",
 };
 
 const RU: Record<string, string> = {
@@ -418,6 +431,18 @@ const RU: Record<string, string> = {
   "audit.act.upload_law": "Загрузка закона",
   "audit.act.enable_2fa": "2FA включён",
   "audit.act.disable_2fa": "2FA отключён",
+  "nav.settings": "Системные настройки",
+  "settings.title": "Системные настройки",
+  "settings.section": "Администрирование",
+  "settings.strictness": "Строгость анализа",
+  "settings.strictness_hint": "Насколько строго ИИ должен оценивать сценарий",
+  "settings.level_1": "Мягкий",
+  "settings.level_1_desc": "Только явные нарушения — спорные ситуации как Низкий или Нет",
+  "settings.level_2": "Умеренный (стандарт)",
+  "settings.level_2_desc": "Сбалансированная и справедливая оценка — рекомендуется",
+  "settings.level_3": "Строгий",
+  "settings.level_3_desc": "Потенциальные риски тоже отмечаются — осторожный подход",
+  "settings.saved": "Сохранено",
 };
 
 const EN: Record<string, string> = {
@@ -618,6 +643,18 @@ const EN: Record<string, string> = {
   "audit.act.upload_law": "Upload law",
   "audit.act.enable_2fa": "2FA enabled",
   "audit.act.disable_2fa": "2FA disabled",
+  "nav.settings": "System settings",
+  "settings.title": "System settings",
+  "settings.section": "Administration",
+  "settings.strictness": "Analysis strictness",
+  "settings.strictness_hint": "How strictly the AI should evaluate the scenario",
+  "settings.level_1": "Lenient",
+  "settings.level_1_desc": "Only clear violations — borderline cases as Low or None",
+  "settings.level_2": "Moderate (default)",
+  "settings.level_2_desc": "Balanced and fair assessment — recommended",
+  "settings.level_3": "Strict",
+  "settings.level_3_desc": "Potential risks also flagged — cautious approach",
+  "settings.saved": "Saved",
 };
 
 const MESSAGES: Record<Lang, Record<string, string>> = { uz: UZ, ru: RU, en: EN };

@@ -10,6 +10,7 @@ import { Users } from "./pages/Users";
 import { Audit } from "./pages/Audit";
 import { Usage } from "./pages/Usage";
 import { ChangePassword } from "./pages/ChangePassword";
+import { Settings } from "./pages/Settings";
 import { Layout } from "./components/shared/Layout";
 import { ProtectedRoute } from "./components/shared/ProtectedRoute";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="users" element={<ProtectedRoute superOnly><ErrorBoundary><Users /></ErrorBoundary></ProtectedRoute>} />
         <Route path="usage" element={<ProtectedRoute superOnly><ErrorBoundary><Usage /></ErrorBoundary></ProtectedRoute>} />
         <Route path="audit" element={<ProtectedRoute superOnly><ErrorBoundary><Audit /></ErrorBoundary></ProtectedRoute>} />
+        <Route path="settings" element={<ProtectedRoute superOnly><ErrorBoundary><Settings /></ErrorBoundary></ProtectedRoute>} />
         <Route path="change-password" element={<ErrorBoundary><ChangePassword /></ErrorBoundary>} />
       </Route>
       <Route path="*" element={<Navigate to="/" />} />

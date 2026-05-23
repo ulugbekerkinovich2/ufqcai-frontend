@@ -1,6 +1,15 @@
-export function ScoreGauge({ value, size = 144 }: { value: number; size?: number }) {
+const RISK_COLOR: Record<string, string> = {
+  High:   "#B91C1C",
+  Medium: "#D97706",
+  Low:    "#16A34A",
+  None:   "#0F766E",
+};
+
+export function ScoreGauge({ value, riskLevel, size = 144 }: { value: number; riskLevel?: string; size?: number }) {
   const v = Math.max(0, Math.min(100, value));
-  const color = v >= 75 ? "#0F766E" : v >= 50 ? "#D97706" : "#B91C1C";
+  const color = riskLevel
+    ? (RISK_COLOR[riskLevel] ?? "#0F766E")
+    : v >= 75 ? "#0F766E" : v >= 50 ? "#D97706" : "#B91C1C";
   const r = 52;
   const c = 2 * Math.PI * r;
   const off = c * (1 - v / 100);
@@ -19,7 +28,7 @@ export function ScoreGauge({ value, size = 144 }: { value: number; size?: number
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center font-serif">
-        <span className="text-[32px] leading-none font-medium text-ink tabular-nums">{Math.round(v)}</span>
+        <span className="text-[32px] leading-none font-medium tabular-nums" style={{ color }}>{Math.round(v)}</span>
         <span className="text-xs text-ink-muted mt-1 font-sans">/ 100</span>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "@/store/auth";
 import {
-  LogOut, FileText, ListChecks, BookOpen, Users, LayoutDashboard, ScrollText, KeyRound, DollarSign,
+  LogOut, FileText, ListChecks, BookOpen, Users, LayoutDashboard, ScrollText, KeyRound, DollarSign, SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
@@ -28,6 +28,7 @@ export function Layout() {
     { to: "/users", label: t("nav.users"), icon: Users, superOnly: true },
     { to: "/usage", label: t("nav.usage"), icon: DollarSign, superOnly: true },
     { to: "/audit", label: t("nav.audit"), icon: ScrollText, superOnly: true },
+    { to: "/settings", label: t("nav.settings"), icon: SlidersHorizontal, superOnly: true },
   ];
 
   return (

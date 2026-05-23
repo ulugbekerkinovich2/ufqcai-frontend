@@ -212,7 +212,7 @@ export function AnalysisResult() {
 
       <div className="card p-8">
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-8 items-center">
-          <ScoreGauge value={scorePct} />
+          <ScoreGauge value={scorePct} riskLevel={a.overall_risk} />
           <div>
             <div className="flex items-center gap-3 mb-4">
               <RiskBadge level={a.overall_risk} />
@@ -220,7 +220,11 @@ export function AnalysisResult() {
                 {t("analysis.summary")} · {score.toFixed(1)} / {overallScale}
               </span>
             </div>
-            <p className="text-[15px] leading-relaxed text-ink text-pretty">{a.summary}</p>
+            <div className="space-y-2">
+              {(a.summary || "").split(" | ").filter(Boolean).map((para, i) => (
+                <p key={i} className="text-[15px] leading-relaxed text-ink text-pretty">{para}</p>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:min-w-[170px]">
             {riskCounts.map((r) => (

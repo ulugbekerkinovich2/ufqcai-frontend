@@ -34,6 +34,8 @@ export function AnalysisResult() {
   const [filter, setFilter] = useState<"all" | "high" | "flagged">("all");
   const [sort, setSort] = useState<"score" | "risk">("risk");
   const [activeSegment, setActiveSegment] = useState<FlaggedSegment | null>(null);
+  const [showLow, setShowLow] = useState(false);
+  const [showHiddenRecs, setShowHiddenRecs] = useState(false);
   const textRef = useRef<HTMLDivElement | null>(null);
 
   const aQ = useQuery({
@@ -65,6 +67,16 @@ export function AnalysisResult() {
   const normalizeKey = (s?: string | null) =>
     (s || "").replace(/^\s*\d+\s*[.)]\s*/, "").trim().toLowerCase();
 
+  const NO_CHANGE_PHRASES = [
+    "o'zgartirish talab etilmaydi", "o`zgartirish talab etilmaydi",
+    "изменений не требуется", "no changes required", "no change required",
+  ];
+  const isNoChangeRec = (rec?: string | null) => {
+    if (!rec) return false;
+    const lower = rec.toLowerCase();
+    return NO_CHANGE_PHRASES.some((p) => lower.includes(p));
+  };
+
   const flagsByCriterion = useMemo(() => {
     const byId: Record<string, FlaggedSegment[]> = {};
     const byName: Record<string, FlaggedSegment[]> = {};
@@ -87,15 +99,25 @@ export function AnalysisResult() {
     return [];
   }
 
+  const lowCount = useMemo(
+    () => results.filter((r) => r.risk_level === "Low").length,
+    [results],
+  );
+
   const filteredResults = useMemo(() => {
-    // None'larni tafsilotda ko'rsatmaymiz — faqat aniqlangan risklar.
     let arr = results.filter((r) => r.risk_level !== "None");
+    if (!showLow) arr = arr.filter((r) => r.risk_level !== "Low");
     if (filter === "high") arr = arr.filter((r) => r.risk_level === "High");
     if (filter === "flagged") arr = arr.filter((r) => flagsForCriterion(r.criterion_id, r.criterion_name).length > 0);
     if (sort === "score") arr.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
     if (sort === "risk") arr.sort((a, b) => (RISK_RANK[b.risk_level] - RISK_RANK[a.risk_level]) || (Number(b.score || 0) - Number(a.score || 0)));
     return arr;
-  }, [results, flagged, filter, sort, flagsByCriterion]);
+  }, [results, flagged, filter, sort, showLow, flagsByCriterion]);
+
+  const hiddenRecsCount = useMemo(
+    () => filteredResults.filter((r) => isNoChangeRec(r.recommendation)).length,
+    [filteredResults],
+  );
 
   // ScrollIntoView segment'ga
   useEffect(() => {
@@ -296,7 +318,8 @@ export function AnalysisResult() {
       )}
 
       <div className="card overflow-hidden">
-        <div className="px-6 py-5 flex flex-wrap items-center gap-4 justify-between">
+        {/* Header: filter + sort controls */}
+        <div className="px-6 py-5 flex flex-wrap items-center gap-4 justify-between border-b border-ink/[0.06]">
           <h2 className="font-serif text-lg">{t("analysis.by_criterion")}</h2>
           <div className="flex flex-wrap items-center gap-2">
             <Filter size={14} className="text-ink-muted" />
@@ -330,89 +353,136 @@ export function AnalysisResult() {
             ))}
           </div>
         </div>
-        <ul className="surface-divider divide-y divide-ink/[0.05]">
+
+        {/* Visibility toggles */}
+        {(lowCount > 0 || hiddenRecsCount > 0) && (
+          <div className="px-6 py-3 flex flex-wrap gap-2 bg-surface-sunken/30 border-b border-ink/[0.06]">
+            {lowCount > 0 && (
+              <button
+                onClick={() => setShowLow(!showLow)}
+                className="chip text-[12px] transition"
+                style={showLow
+                  ? { background: "var(--color-surface-raised)", color: "var(--color-ink)" }
+                  : { background: "#FEF7E6", color: "#92660A" }
+                }
+              >
+                <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: "#D97706" }} />
+                {showLow ? t("analysis.hide_low") : `${t("analysis.show_low")} (${lowCount})`}
+              </button>
+            )}
+            {hiddenRecsCount > 0 && (
+              <button
+                onClick={() => setShowHiddenRecs(!showHiddenRecs)}
+                className="chip bg-surface-raised text-ink-muted text-[12px] hover:text-ink transition"
+              >
+                {showHiddenRecs ? t("analysis.hide_recs") : `${t("analysis.show_recs")} (${hiddenRecsCount})`}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Criterion cards */}
+        <div className="p-5 space-y-4">
           {filteredResults.map((r) => {
             const segs = flagsForCriterion(r.criterion_id, r.criterion_name);
             const hasFlags = segs.length > 0;
+            const recHidden = isNoChangeRec(r.recommendation) && !showHiddenRecs;
+            const borderColor = RISK_COLOR[r.risk_level] || RISK_COLOR.None;
             return (
-              <li key={r.id} className="px-6 py-5 hover:bg-surface-sunken/40 transition">
-                <div className="flex flex-wrap items-baseline gap-3 mb-2">
-                  <h4 className="font-serif text-[17px]">{r.criterion_name}</h4>
-                  <RiskBadge level={r.risk_level} />
-                  {hasFlags && (
-                    <button
-                      onClick={() => jumpToCriterion(r.criterion_id, r.criterion_name)}
-                      className="chip bg-accent-50 text-accent-700 text-[11px] hover:bg-accent-100 transition"
-                    >
-                      <Search size={10} /> {t("analysis.find_in_text")} ({segs.length})
-                    </button>
-                  )}
-                  <span className="text-[12px] text-ink-muted ml-auto tabular-nums">
-                    {t("analysis.score")}: {r.score?.toString()} / {scoreMax}
-                  </span>
-                </div>
-                {r.finding && (
-                  <div className="text-[14px] text-ink leading-relaxed mt-2">
-                    <span className="text-ink-muted text-[12.5px] uppercase tracking-wide mr-2">{t("analysis.found")}</span>
-                    {r.finding}
-                  </div>
-                )}
-
-                {/* Dalillar — AI keltirgan parchalar (ssenariy ichidan) */}
-                {hasFlags && (
-                  <div className="mt-4 space-y-2.5">
-                    <div className="text-[12px] uppercase tracking-wide text-ink-muted">
-                      {t("analysis.evidence")} · {segs.length}
-                    </div>
-                    {segs.slice(0, 5).map((seg) => {
-                      const color = RISK_COLOR[seg.risk_level || "Low"] || RISK_COLOR.Low;
-                      return (
-                        <button
-                          key={seg.id}
-                          onClick={() => setActiveSegment(seg)}
-                          className="block w-full text-left bg-surface-sunken/40 hover:bg-surface-sunken rounded-xl px-4 py-3 transition group"
-                        >
-                          <div className="flex items-start gap-2.5">
-                            <span className="h-1.5 w-1.5 rounded-full mt-2 shrink-0" style={{ background: color }} />
-                            <div className="flex-1 min-w-0">
-                              <blockquote
-                                className="text-[13.5px] text-ink italic leading-relaxed border-l-2 pl-3"
-                                style={{ borderColor: color }}
-                              >
-                                «{seg.quote}»
-                              </blockquote>
-                              {seg.explanation && (
-                                <div className="text-[12.5px] text-ink-muted mt-1.5 pl-3">
-                                  {seg.explanation}
-                                </div>
-                              )}
-                            </div>
-                            <Search size={13} className="text-ink-subtle group-hover:text-accent shrink-0 mt-1" />
-                          </div>
-                        </button>
-                      );
-                    })}
-                    {segs.length > 5 && (
-                      <div className="text-[12px] text-ink-muted text-center pt-1">
-                        +{segs.length - 5} {t("analysis.more_evidence")}
-                      </div>
+              <div
+                key={r.id}
+                className="rounded-2xl border border-ink/[0.08] overflow-hidden"
+                style={{ borderLeftColor: borderColor, borderLeftWidth: 3 }}
+              >
+                {/* Card header */}
+                <div className="px-5 py-4">
+                  <h4 className="font-serif text-[17px] leading-snug mb-2.5">{r.criterion_name}</h4>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <RiskBadge level={r.risk_level} />
+                    <span className="text-[12px] text-ink-muted tabular-nums">
+                      {t("analysis.score")}: {r.score?.toString()} / {scoreMax}
+                    </span>
+                    {hasFlags && (
+                      <button
+                        onClick={() => jumpToCriterion(r.criterion_id, r.criterion_name)}
+                        className="chip bg-accent-50 text-accent-700 text-[11px] hover:bg-accent-100 transition"
+                      >
+                        <Search size={10} /> {t("analysis.find_in_text")} ({segs.length})
+                      </button>
                     )}
                   </div>
-                )}
+                </div>
 
-                {r.recommendation && (
-                  <div className="text-[14px] text-ink-muted leading-relaxed mt-4 bg-accent-50/40 rounded-xl px-4 py-3">
-                    <span className="text-accent text-[12.5px] uppercase tracking-wide mr-2 font-medium">{t("analysis.recommendation")}</span>
-                    {r.recommendation}
+                {/* Finding */}
+                {r.finding && (
+                  <div className="px-5 py-3.5 border-t border-ink/[0.06] bg-surface-sunken/20">
+                    <div className="text-[11px] uppercase tracking-[0.12em] text-ink-muted mb-1.5 font-medium">
+                      {t("analysis.found")}
+                    </div>
+                    <p className="text-[14px] text-ink leading-relaxed">{r.finding}</p>
                   </div>
                 )}
-              </li>
+
+                {/* Evidence */}
+                {hasFlags && (
+                  <div className="px-5 py-3.5 border-t border-ink/[0.06]">
+                    <div className="text-[11px] uppercase tracking-[0.12em] text-ink-muted mb-2.5 font-medium">
+                      {t("analysis.evidence")} · {segs.length}
+                    </div>
+                    <div className="space-y-2">
+                      {segs.slice(0, 5).map((seg) => {
+                        const color = RISK_COLOR[seg.risk_level || "Low"] || RISK_COLOR.Low;
+                        return (
+                          <button
+                            key={seg.id}
+                            onClick={() => setActiveSegment(seg)}
+                            className="block w-full text-left bg-surface-sunken/40 hover:bg-surface-sunken rounded-xl px-4 py-3 transition group"
+                          >
+                            <div className="flex items-start gap-2.5">
+                              <span className="h-1.5 w-1.5 rounded-full mt-2 shrink-0" style={{ background: color }} />
+                              <div className="flex-1 min-w-0">
+                                <blockquote
+                                  className="text-[13.5px] text-ink italic leading-relaxed border-l-2 pl-3"
+                                  style={{ borderColor: color }}
+                                >
+                                  «{seg.quote}»
+                                </blockquote>
+                                {seg.explanation && (
+                                  <div className="text-[12.5px] text-ink-muted mt-1.5 pl-3">
+                                    {seg.explanation}
+                                  </div>
+                                )}
+                              </div>
+                              <Search size={13} className="text-ink-subtle group-hover:text-accent shrink-0 mt-1" />
+                            </div>
+                          </button>
+                        );
+                      })}
+                      {segs.length > 5 && (
+                        <div className="text-[12px] text-ink-muted text-center pt-1">
+                          +{segs.length - 5} {t("analysis.more_evidence")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recommendation */}
+                {r.recommendation && !recHidden && (
+                  <div className="px-5 py-3.5 border-t border-ink/[0.06] bg-accent-50/20">
+                    <div className="text-[11px] uppercase tracking-[0.12em] text-accent mb-1.5 font-medium">
+                      {t("analysis.recommendation")}
+                    </div>
+                    <p className="text-[14px] text-ink-muted leading-relaxed">{r.recommendation}</p>
+                  </div>
+                )}
+              </div>
             );
           })}
           {filteredResults.length === 0 && (
-            <li className="px-6 py-10 text-center text-ink-muted text-sm">{t("common.empty")}</li>
+            <div className="py-10 text-center text-ink-muted text-sm">{t("common.empty")}</div>
           )}
-        </ul>
+        </div>
       </div>
 
       {docQ.data?.extracted_text && (

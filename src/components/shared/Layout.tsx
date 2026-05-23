@@ -101,6 +101,11 @@ export function Layout() {
             </button>
           </div>
         </div>
+        <div className="px-6 pb-5 pt-1 text-center">
+          <p className="text-[10.5px] text-ink-subtle tracking-wide">
+            <span className="font-semibold text-ink-muted">UFQ</span> tomonidan yaratilgan
+          </p>
+        </div>
       </aside>
 
       <main className="flex-1 overflow-auto">

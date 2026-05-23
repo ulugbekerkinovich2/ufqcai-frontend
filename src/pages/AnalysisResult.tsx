@@ -199,11 +199,14 @@ export function AnalysisResult() {
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-8 items-center">
           <ScoreGauge value={scorePct} />
           <div>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-3">
               <RiskBadge level={a.overall_risk} />
-              <span className="text-[12.5px] text-ink-subtle">
-                {t("analysis.summary")} · {score.toFixed(1)} / {overallScale}
-              </span>
+              <div>
+                <span className="text-[13px] font-medium text-ink">
+                  {t("analysis.summary")} · {score.toFixed(1)} / {overallScale}
+                </span>
+                <p className="text-[11.5px] text-ink-muted mt-0.5">{t("analysis.score_hint")}</p>
+              </div>
             </div>
             <div className="space-y-2">
               {(a.summary || "").split(" | ").filter(Boolean).map((para, i) => (
@@ -233,10 +236,12 @@ export function AnalysisResult() {
           <div className="card p-6">
             <div className="flex items-baseline justify-between mb-4">
               <h3 className="font-serif text-lg">{t("analysis.scores")}</h3>
-              <span className="text-[12px] text-ink-muted">{results.length} · 0–{scoreMax}</span>
+              <span className="text-[12px] text-ink-muted">
+                {results.filter((r) => r.risk_level !== "None").length} · 0–{scoreMax}
+              </span>
             </div>
             <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-1">
-              {[...results].sort((a, b) => Number(b.score || 0) - Number(a.score || 0)).map((r) => {
+              {[...results].filter((r) => r.risk_level !== "None").sort((a, b) => Number(b.score || 0) - Number(a.score || 0)).map((r) => {
                 const sc = Number(r.score || 0);
                 const pct = Math.max(2, (sc / scoreMax) * 100);
                 const color = RISK_COLOR[r.risk_level] || RISK_COLOR.None;

@@ -146,6 +146,7 @@ const UZ: Record<string, string> = {
   "analysis.genre": "Janr",
   "analysis.genre_hint": "AI tomonidan aniqlangan janrlar",
   "analysis.genre_empty": "Janr aniqlanmadi",
+  "analysis.score_hint": "Umumiy risk bali: 0 — xavfsiz, 100 — eng yuqori risk",
   // criteria
   "criteria.title": "Mezonlar",
   "criteria.section": "Sozlamalar",
@@ -234,6 +235,7 @@ const UZ: Record<string, string> = {
   "settings.level_3": "Qattiq",
   "settings.level_3_desc": "Potentsial xavflar ham belgilanadi — ehtiyotkor yondashuv",
   "settings.saved": "Saqlandi",
+  "app.copyright": "© 2026 UFQ MChJ. Barcha huquqlar himoyalangan.",
 };
 
 const RU: Record<string, string> = {
@@ -367,6 +369,7 @@ const RU: Record<string, string> = {
   "analysis.genre": "Жанр",
   "analysis.genre_hint": "Жанры, определённые ИИ",
   "analysis.genre_empty": "Жанр не определён",
+  "analysis.score_hint": "Общий балл риска: 0 — безопасно, 100 — максимальный риск",
   "criteria.title": "Критерии",
   "criteria.section": "Настройки",
   "criteria.hint": "Культурные, правовые и контентные критерии — ИИ использует их в каждом анализе.",
@@ -449,6 +452,7 @@ const RU: Record<string, string> = {
   "settings.level_3": "Строгий",
   "settings.level_3_desc": "Потенциальные риски тоже отмечаются — осторожный подход",
   "settings.saved": "Сохранено",
+  "app.copyright": "© 2026 UFQ MChJ. Все права защищены.",
 };
 
 const EN: Record<string, string> = {
@@ -582,6 +586,7 @@ const EN: Record<string, string> = {
   "analysis.genre": "Genre",
   "analysis.genre_hint": "Genres identified by AI",
   "analysis.genre_empty": "Genre not detected",
+  "analysis.score_hint": "Overall risk score: 0 — safe, 100 — highest risk",
   "criteria.title": "Criteria",
   "criteria.section": "Settings",
   "criteria.hint": "Cultural, legal and content criteria — AI uses these in every analysis.",
@@ -664,6 +669,7 @@ const EN: Record<string, string> = {
   "settings.level_3": "Strict",
   "settings.level_3_desc": "Potential risks also flagged — cautious approach",
   "settings.saved": "Saved",
+  "app.copyright": "© 2026 UFQ MChJ. All rights reserved.",
 };
 
 const MESSAGES: Record<Lang, Record<string, string>> = { uz: UZ, ru: RU, en: EN };

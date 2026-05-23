@@ -102,8 +102,8 @@ export function Layout() {
           </div>
         </div>
         <div className="px-6 pb-5 pt-1 text-center">
-          <p className="text-[10.5px] text-ink-subtle tracking-wide">
-            <span className="font-semibold text-ink-muted">UFQ</span> tomonidan yaratilgan
+          <p className="text-[10.5px] text-ink-subtle leading-relaxed">
+            {t("app.copyright")}
           </p>
         </div>
       </aside>

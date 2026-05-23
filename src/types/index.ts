@@ -63,6 +63,7 @@ export interface Analysis {
   overall_score?: number | string;
   overall_risk?: RiskLevel;
   summary?: string;
+  genre?: string[];
   model_used?: string;
   tokens_used?: number;
   started_at?: string;

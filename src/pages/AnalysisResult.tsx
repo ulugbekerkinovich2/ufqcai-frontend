@@ -8,11 +8,8 @@ import { ScoreGauge, scoreColor } from "@/components/shared/ScoreGauge";
 import { RiskBadge } from "@/components/shared/RiskBadge";
 import { HighlightedText } from "@/components/shared/HighlightedText";
 import { AnalysisProgress } from "@/components/shared/AnalysisProgress";
-import { Download, ArrowLeft, AlertTriangle, Filter, Search } from "lucide-react";
+import { Download, ArrowLeft, AlertTriangle, Filter, Search, Film } from "lucide-react";
 import { useAuth } from "@/store/auth";
-import {
-  PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip,
-} from "recharts";
 import { cn } from "@/lib/utils";
 
 const RISK_COLOR: Record<string, string> = {
@@ -20,11 +17,6 @@ const RISK_COLOR: Record<string, string> = {
 };
 const RISK_RANK: Record<string, number> = { None: 0, Low: 1, Medium: 2, High: 3 };
 
-function shorten(name: string, n = 14): string {
-  // "1. Nom" → "Nom" — raqamni olib tashlash, qisqartirish
-  const clean = name.replace(/^\s*\d+[.)]\s*/, "");
-  return clean.length > n ? clean.slice(0, n - 1) + "…" : clean;
-}
 
 export function AnalysisResult() {
   const { t } = useI18n();
@@ -156,14 +148,7 @@ export function AnalysisResult() {
   const overallScale = score > 10 ? 100 : 10;
   const scorePct = (score / overallScale) * 100;
 
-  // Radar — toza, faqat name + score (0-100% normalized)
-  const radarData = results.map((r) => ({
-    name: shorten(r.criterion_name || ""),
-    fullName: r.criterion_name,
-    raw: Number(r.score || 0),
-    score: (Number(r.score || 0) / scoreMax) * 100,
-    risk: r.risk_level as RiskLevel,
-  }));
+  const genres = a.genre || [];
 
   const riskCounts = (["None", "Low", "Medium", "High"] as RiskLevel[]).map((lvl) => ({
     risk: lvl, count: results.filter((r) => r.risk_level === lvl).length,
@@ -286,56 +271,48 @@ export function AnalysisResult() {
             </div>
           </div>
 
-          <div className="card p-6">
-            <div className="flex items-baseline justify-between mb-4">
-              <h3 className="font-serif text-lg">{t("analysis.radar")}</h3>
-              <span className="text-[12px] text-ink-muted">Top {Math.min(12, results.length)}</span>
+          <div className="card p-6 flex flex-col">
+            <div className="flex items-center gap-2.5 mb-5">
+              <div className="h-9 w-9 rounded-xl bg-accent-50 text-accent grid place-items-center shrink-0">
+                <Film size={17} strokeWidth={1.75} />
+              </div>
+              <div>
+                <h3 className="font-serif text-lg leading-tight">{t("analysis.genre")}</h3>
+                <p className="text-[12px] text-ink-muted mt-0.5">{t("analysis.genre_hint")}</p>
+              </div>
             </div>
-            {/* Radar — faqat top-12 eng yuqori ballik, overlap kamayadi */}
-            <div className="h-[400px]">
-              <ResponsiveContainer>
-                <RadarChart
-                  data={[...radarData].sort((a, b) => b.raw - a.raw).slice(0, 12)}
-                  margin={{ top: 16, right: 30, left: 30, bottom: 8 }}
-                  outerRadius="78%"
-                >
-                  <PolarGrid stroke="#E5E5E1" strokeDasharray="2 4" />
-                  <PolarAngleAxis
-                    dataKey="name"
-                    tick={({ payload, x, y, textAnchor }: any) => {
-                      const entry = [...radarData].sort((a, b) => b.raw - a.raw).slice(0, 12)
-                        .find((d) => d.name === payload.value);
-                      const pct = entry ? (entry.raw / scoreMax) * 100 : 0;
-                      return (
-                        <text x={x} y={y} textAnchor={textAnchor} fill={scoreColor(pct)} fontSize={11} fontWeight={500}>
-                          {payload.value}
-                        </text>
-                      );
-                    }}
-                  />
-                  <Radar
-                    name="Score"
-                    dataKey="score"
-                    stroke="#94A3B8"
-                    strokeWidth={1.5}
-                    fill="#94A3B8"
-                    fillOpacity={0.12}
-                    dot={(props: any) => {
-                      const pct = (props.payload.raw / scoreMax) * 100;
-                      const c = scoreColor(pct);
-                      return <circle key={props.index} cx={props.cx} cy={props.cy} r={5} fill={c} stroke="white" strokeWidth={1.5} />;
-                    }}
-                  />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 8px 24px rgba(16,24,40,0.12)", fontSize: 13, padding: "8px 12px" }}
-                    formatter={(_v: any, _n: any, p: any) => [
-                      `${p.payload.raw.toFixed(1)} / ${scoreMax}`,
-                      p.payload.fullName,
-                    ]}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
+
+            {genres.length > 0 ? (
+              <div className="flex flex-wrap gap-2.5">
+                {genres.map((g, i) => {
+                  const palettes = [
+                    { bg: "#F0FDFA", fg: "#0F766E", border: "#99F6E4" },
+                    { bg: "#FFF7ED", fg: "#C2410C", border: "#FED7AA" },
+                    { bg: "#F0F9FF", fg: "#0369A1", border: "#BAE6FD" },
+                    { bg: "#FDF4FF", fg: "#7E22CE", border: "#E9D5FF" },
+                    { bg: "#FFF1F2", fg: "#BE123C", border: "#FECDD3" },
+                    { bg: "#F7FEE7", fg: "#3F6212", border: "#D9F99D" },
+                  ];
+                  const p = palettes[i % palettes.length];
+                  return (
+                    <span
+                      key={g}
+                      className="inline-flex items-center px-4 py-2 rounded-full text-[14px] font-medium border"
+                      style={{ background: p.bg, color: p.fg, borderColor: p.border }}
+                    >
+                      {g}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
+                <div className="h-14 w-14 rounded-2xl bg-surface-sunken grid place-items-center mb-3">
+                  <Film size={24} className="text-ink-subtle" strokeWidth={1.5} />
+                </div>
+                <p className="text-[13px] text-ink-muted">{t("analysis.genre_empty")}</p>
+              </div>
+            )}
           </div>
         </div>
       )}

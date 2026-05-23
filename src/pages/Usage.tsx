@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DollarSign, Cpu, Activity, TrendingUp } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 interface Summary {
   total: { analyses: number; tokens: number; cost_usd: number };
@@ -35,6 +36,7 @@ function fmtInt(n: number) {
 }
 
 export function Usage() {
+  const { t } = useI18n();
   const sumQ = useQuery({ queryKey: ["usage-summary"], queryFn: async () => (await api.get<Summary>("/usage/summary")).data });
   const byUserQ = useQuery({ queryKey: ["usage-by-user"], queryFn: async () => (await api.get<UserRow[]>("/usage/by-user")).data });
   const dailyQ = useQuery({ queryKey: ["usage-daily"], queryFn: async () => (await api.get<DailyRow[]>("/usage/daily", { params: { days: 30 } })).data });
@@ -46,25 +48,22 @@ export function Usage() {
   return (
     <div className="space-y-7 animate-fade-in">
       <header>
-        <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">Hisobot</p>
-        <h1 className="font-serif text-[26px] leading-tight">OpenAI sarflar</h1>
-        <p className="text-[13.5px] text-ink-muted mt-2 max-w-2xl">
-          AI tahlillarga sarflangan tokenlar va taxminiy USD xarajat. Narxlar OpenAI rasmiy tariflari asosida
-          (input 70% / output 30% aralash baho).
-        </p>
+        <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">{t("usage.section")}</p>
+        <h1 className="font-serif text-[26px] leading-tight">{t("usage.title")}</h1>
+        <p className="text-[13.5px] text-ink-muted mt-2 max-w-2xl">{t("usage.hint")}</p>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        <StatCard icon={DollarSign} label="Jami xarajat" value={fmtUSD(s?.total.cost_usd || 0)} sub={`${fmtInt(s?.total.tokens || 0)} token`} />
-        <StatCard icon={TrendingUp} label="Bugun" value={fmtUSD(s?.today.cost_usd || 0)} sub={`${fmtInt(s?.today.tokens || 0)} token`} />
-        <StatCard icon={Activity} label="Shu oy" value={fmtUSD(s?.month.cost_usd || 0)} sub={`${fmtInt(s?.month.tokens || 0)} token`} />
-        <StatCard icon={Cpu} label="Tahlillar" value={fmtInt(s?.total.analyses || 0)} sub="jami" />
+        <StatCard icon={DollarSign} label={t("usage.total_cost")} value={fmtUSD(s?.total.cost_usd || 0)} sub={`${fmtInt(s?.total.tokens || 0)} token`} />
+        <StatCard icon={TrendingUp} label={t("common.today")} value={fmtUSD(s?.today.cost_usd || 0)} sub={`${fmtInt(s?.today.tokens || 0)} token`} />
+        <StatCard icon={Activity} label={t("common.month")} value={fmtUSD(s?.month.cost_usd || 0)} sub={`${fmtInt(s?.month.tokens || 0)} token`} />
+        <StatCard icon={Cpu} label={t("usage.analyses")} value={fmtInt(s?.total.analyses || 0)} sub={t("common.total")} />
       </div>
 
       <div className="card p-6">
         <div className="flex items-baseline justify-between mb-5">
-          <h2 className="font-serif text-lg">So'nggi 30 kun</h2>
-          <span className="text-[12px] text-ink-muted">USD per kun</span>
+          <h2 className="font-serif text-lg">{t("usage.last30")}</h2>
+          <span className="text-[12px] text-ink-muted">USD</span>
         </div>
         <div className="h-64">
           <ResponsiveContainer>
@@ -93,16 +92,16 @@ export function Usage() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         <div className="card overflow-hidden">
           <div className="px-6 py-5 flex items-baseline justify-between">
-            <h2 className="font-serif text-lg">Modellar kesimida</h2>
-            <span className="text-[12px] text-ink-muted">{(s?.by_model || []).length} ta</span>
+            <h2 className="font-serif text-lg">{t("usage.by_model")}</h2>
+            <span className="text-[12px] text-ink-muted">{(s?.by_model || []).length}</span>
           </div>
           <table className="w-full text-[13.5px]">
             <thead>
               <tr className="text-[12px] uppercase tracking-wide text-ink-muted">
-                <th className="text-left font-medium px-6 py-3">Model</th>
-                <th className="text-right font-medium py-3">Tahlillar</th>
-                <th className="text-right font-medium py-3">Tokenlar</th>
-                <th className="text-right font-medium py-3 pr-6">Xarajat</th>
+                <th className="text-left font-medium px-6 py-3">{t("analysis.model")}</th>
+                <th className="text-right font-medium py-3">{t("usage.analyses")}</th>
+                <th className="text-right font-medium py-3">{t("analysis.tokens")}</th>
+                <th className="text-right font-medium py-3 pr-6">{t("usage.total_cost")}</th>
               </tr>
             </thead>
             <tbody>
@@ -115,7 +114,7 @@ export function Usage() {
                 </tr>
               ))}
               {(!s?.by_model || s.by_model.length === 0) && (
-                <tr><td colSpan={4} className="px-6 py-8 text-center text-ink-muted">Hozircha tahlillar yo'q</td></tr>
+                <tr><td colSpan={4} className="px-6 py-8 text-center text-ink-muted">{t("common.empty")}</td></tr>
               )}
             </tbody>
           </table>
@@ -123,7 +122,7 @@ export function Usage() {
 
         <div className="card p-6">
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="font-serif text-lg">Foydalanuvchilar kesimida</h2>
+            <h2 className="font-serif text-lg">{t("usage.by_user")}</h2>
             <span className="text-[12px] text-ink-muted">Top {Math.min(users.length, 10)}</span>
           </div>
           <div className="h-72">
@@ -146,15 +145,15 @@ export function Usage() {
 
       <div className="card overflow-hidden">
         <div className="px-6 py-5">
-          <h2 className="font-serif text-lg">Foydalanuvchilar tafsiloti</h2>
+          <h2 className="font-serif text-lg">{t("usage.by_user")}</h2>
         </div>
         <table className="w-full text-[13.5px]">
           <thead>
             <tr className="text-[12px] uppercase tracking-wide text-ink-muted">
-              <th className="text-left font-medium px-6 py-3">Foydalanuvchi</th>
-              <th className="text-right font-medium py-3">Tahlillar</th>
-              <th className="text-right font-medium py-3">Tokenlar</th>
-              <th className="text-right font-medium py-3 pr-6">Xarajat</th>
+              <th className="text-left font-medium px-6 py-3">{t("users.title")}</th>
+              <th className="text-right font-medium py-3">{t("usage.analyses")}</th>
+              <th className="text-right font-medium py-3">{t("analysis.tokens")}</th>
+              <th className="text-right font-medium py-3 pr-6">{t("usage.total_cost")}</th>
             </tr>
           </thead>
           <tbody>
@@ -170,7 +169,7 @@ export function Usage() {
               </tr>
             ))}
             {users.length === 0 && (
-              <tr><td colSpan={4} className="px-6 py-8 text-center text-ink-muted">Foydalanuvchilar yo'q</td></tr>
+              <tr><td colSpan={4} className="px-6 py-8 text-center text-ink-muted">{t("common.empty")}</td></tr>
             )}
           </tbody>
         </table>

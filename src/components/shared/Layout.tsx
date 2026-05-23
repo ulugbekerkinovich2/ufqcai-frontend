@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
+import { LogoMark } from "./Logo";
 
 const langs: { code: "uz" | "ru" | "en"; label: string }[] = [
   { code: "uz", label: "UZ" },
@@ -34,10 +35,10 @@ export function Layout() {
       <aside className="w-[260px] shrink-0 bg-surface-raised border-r border-ink/[0.05] flex flex-col">
         <div className="px-6 pt-7 pb-6">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-accent text-white grid place-items-center font-serif text-lg">S</div>
+            <LogoMark size={36} />
             <div>
               <div className="font-serif text-[17px] leading-tight text-ink">{t("app.title")}</div>
-              <div className="text-[11px] text-ink-muted">Madaniyat vazirligi</div>
+              <div className="text-[11px] text-ink-muted">{t("app.subtitle")}</div>
             </div>
           </div>
         </div>

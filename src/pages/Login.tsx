@@ -3,10 +3,13 @@ import { useNavigate, Navigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "@/store/auth";
 import { API_BASE_URL } from "@/api/client";
-import { ShieldCheck, Loader2, ArrowRight } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+import { LogoMark } from "@/components/shared/Logo";
+import { Loader2, ArrowRight } from "lucide-react";
 
 export function Login() {
   const { accessToken, setTokens, setUser } = useAuth();
+  const { t } = useI18n();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,27 +51,23 @@ export function Login() {
       <div className="relative w-full max-w-[420px]">
         {/* Brand mark */}
         <div className="flex items-center gap-3 mb-10">
-          <div className="h-11 w-11 rounded-xl bg-accent text-white grid place-items-center shadow-card">
-            <ShieldCheck size={20} strokeWidth={1.75} />
-          </div>
+          <LogoMark size={44} />
           <div>
-            <div className="font-serif text-[18px] leading-tight text-ink">Senariy Analizer</div>
-            <div className="text-[12px] text-ink-muted">Madaniyat vazirligi · Ichki tizim</div>
+            <div className="font-serif text-[18px] leading-tight text-ink">{t("app.title")}</div>
+            <div className="text-[12px] text-ink-muted">{t("app.subtitle")}</div>
           </div>
         </div>
 
         {/* Form card */}
         <form onSubmit={submit} className="bg-surface-raised rounded-2xl shadow-card p-7 space-y-5">
           <div>
-            <h1 className="font-serif text-[22px] leading-tight text-ink">Tizimga kirish</h1>
-            <p className="text-[13px] text-ink-muted mt-1">
-              Hisob faqat Super Admin tomonidan yaratiladi
-            </p>
+            <h1 className="font-serif text-[22px] leading-tight text-ink">{t("auth.login")}</h1>
+            <p className="text-[13px] text-ink-muted mt-1">{t("auth.note")}</p>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="label">Elektron pochta</label>
+              <label className="label">{t("auth.email")}</label>
               <input
                 className="input"
                 type="email"
@@ -81,7 +80,7 @@ export function Login() {
               />
             </div>
             <div>
-              <label className="label">Parol</label>
+              <label className="label">{t("auth.password")}</label>
               <input
                 className="input"
                 type="password"
@@ -106,11 +105,11 @@ export function Login() {
           >
             {loading ? (
               <>
-                <Loader2 size={15} className="animate-spin" /> Tekshirilmoqda...
+                <Loader2 size={15} className="animate-spin" /> {t("auth.signing_in")}
               </>
             ) : (
               <>
-                Kirish
+                {t("auth.submit")}
                 <ArrowRight size={15} className="transition group-hover:translate-x-0.5" />
               </>
             )}

@@ -6,16 +6,18 @@ import { FileUploader } from "@/components/shared/FileUploader";
 import { formatDate } from "@/lib/utils";
 import type { Document } from "@/types";
 import { Trash2, Search, ArrowUpRight, FileText } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
-const STATUS_MAP: Record<string, { label: string; cls: string }> = {
-  uploaded: { label: "Yuklangan", cls: "bg-surface-sunken text-ink-muted" },
-  parsed: { label: "Tayyor", cls: "bg-accent-50 text-accent-700" },
-  analyzing: { label: "Tahlilda", cls: "bg-risk-low-bg text-risk-low-fg" },
-  done: { label: "Tugagan", cls: "bg-accent-50 text-accent-700" },
-  error: { label: "Xato", cls: "bg-risk-high-bg text-risk-high-fg" },
+const STATUS_CLS: Record<string, string> = {
+  uploaded: "bg-surface-sunken text-ink-muted",
+  parsed: "bg-accent-50 text-accent-700",
+  analyzing: "bg-risk-low-bg text-risk-low-fg",
+  done: "bg-accent-50 text-accent-700",
+  error: "bg-risk-high-bg text-risk-high-fg",
 };
 
 export function Documents() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [err, setErr] = useState("");
   const [query, setQuery] = useState("");
@@ -50,10 +52,10 @@ export function Documents() {
     <div className="space-y-7 animate-fade-in">
       <header className="flex items-end justify-between">
         <div>
-          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">Ekspertiza</p>
-          <h1 className="font-serif text-[26px] leading-tight">Ssenariylar</h1>
+          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">{t("documents.section")}</p>
+          <h1 className="font-serif text-[26px] leading-tight">{t("documents.title")}</h1>
         </div>
-        <div className="text-[13px] text-ink-muted">Jami {items.length} ta</div>
+        <div className="text-[13px] text-ink-muted">{t("documents.total", { n: items.length })}</div>
       </header>
 
       <FileUploader onFile={(f) => { setErr(""); upload.mutate(f); }} loading={upload.isPending} />
@@ -65,7 +67,7 @@ export function Documents() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Nomi yoki fayl bo'yicha qidirish..."
+            placeholder={t("documents.search")}
             className="flex-1 bg-transparent outline-none text-sm placeholder:text-ink-subtle"
           />
           <span className="text-[12px] text-ink-subtle">{filtered.length}</span>
@@ -73,17 +75,18 @@ export function Documents() {
         <table className="w-full">
           <thead>
             <tr className="text-[12px] uppercase tracking-wide text-ink-muted">
-              <th className="text-left font-medium px-6 py-3">Nomi</th>
-              <th className="text-left font-medium py-3 w-24">Format</th>
-              <th className="text-left font-medium py-3 w-24">Hajm</th>
-              <th className="text-left font-medium py-3 w-32">Status</th>
-              <th className="text-left font-medium py-3 w-40">Sana</th>
+              <th className="text-left font-medium px-6 py-3">{t("documents.col_name")}</th>
+              <th className="text-left font-medium py-3 w-24">{t("documents.col_format")}</th>
+              <th className="text-left font-medium py-3 w-24">{t("documents.col_size")}</th>
+              <th className="text-left font-medium py-3 w-32">{t("documents.col_status")}</th>
+              <th className="text-left font-medium py-3 w-40">{t("documents.col_date")}</th>
               <th className="py-3 w-20"></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((d) => {
-              const status = STATUS_MAP[d.status] || { label: d.status, cls: "bg-surface-sunken text-ink-muted" };
+              const cls = STATUS_CLS[d.status] || "bg-surface-sunken text-ink-muted";
+              const label = t(`status.${d.status}`);
               return (
                 <tr key={d.id} className="table-row border-t border-ink/[0.05] hover:bg-surface-sunken/50">
                   <td className="px-6">
@@ -99,13 +102,13 @@ export function Documents() {
                   </td>
                   <td className="text-[13px] uppercase text-ink-muted tabular-nums">{d.file_type}</td>
                   <td className="text-[13px] text-ink-muted tabular-nums">{(d.file_size / 1024 / 1024).toFixed(2)} MB</td>
-                  <td><span className={`chip ${status.cls}`}>{status.label}</span></td>
+                  <td><span className={`chip ${cls}`}>{label}</span></td>
                   <td className="text-[13px] text-ink-muted">{formatDate(d.created_at)}</td>
                   <td className="pr-6 text-right">
                     <div className="inline-flex gap-0.5">
                       <Link to={`/documents/${d.id}`} className="btn-ghost h-8 w-8 p-0"><ArrowUpRight size={15} /></Link>
                       <button
-                        onClick={() => confirm("O'chirilsinmi?") && del.mutate(d.id)}
+                        onClick={() => confirm(t("common.confirm_delete")) && del.mutate(d.id)}
                         className="btn-ghost h-8 w-8 p-0 hover:text-risk-high-fg"
                       ><Trash2 size={14} strokeWidth={1.75} /></button>
                     </div>
@@ -115,7 +118,7 @@ export function Documents() {
             })}
             {filtered.length === 0 && (
               <tr><td colSpan={6} className="px-6 py-12 text-center text-ink-muted text-sm">
-                {query ? "Hech narsa topilmadi" : "Hozircha ssenariy yo'q"}
+                {t("common.empty")}
               </td></tr>
             )}
           </tbody>

@@ -1,3 +1,5 @@
+import { useState, useMemo } from "react";
+import { useI18n } from "@/lib/i18n";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api, API_BASE_URL } from "@/api/client";
@@ -5,21 +7,25 @@ import type { Analysis, Document, RiskLevel } from "@/types";
 import { ScoreGauge } from "@/components/shared/ScoreGauge";
 import { RiskBadge } from "@/components/shared/RiskBadge";
 import { HighlightedText } from "@/components/shared/HighlightedText";
-import { Download, ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
+import { AnalysisProgress } from "@/components/shared/AnalysisProgress";
+import { Download, ArrowLeft, AlertTriangle, Filter } from "lucide-react";
 import { useAuth } from "@/store/auth";
 import {
-  Bar, BarChart, Cell, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Tooltip,
 } from "recharts";
+import { cn } from "@/lib/utils";
 
 const RISK_COLOR: Record<string, string> = {
   None: "#9CA3AF", Low: "#D97706", Medium: "#EA580C", High: "#DC2626",
 };
+const RISK_RANK: Record<string, number> = { None: 0, Low: 1, Medium: 2, High: 3 };
 
-function shorten(name: string, n = 18): string {
+function shorten(name: string, n = 22): string {
   return name.length > n ? name.slice(0, n - 1) + "…" : name;
 }
 
 export function AnalysisResult() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const { accessToken } = useAuth();
 
@@ -38,19 +44,14 @@ export function AnalysisResult() {
     enabled: !!aQ.data?.document_id,
   });
 
-  if (!aQ.data) return <div className="text-ink-muted">Yuklanmoqda...</div>;
+  const [filter, setFilter] = useState<"all" | "high" | "flagged">("all");
+  const [sort, setSort] = useState<"score" | "risk">("risk");
+
+  if (!aQ.data) return <div className="text-ink-muted">{t("common.loading")}</div>;
   const a = aQ.data;
 
   if (a.status === "pending" || a.status === "running") {
-    return (
-      <div className="card p-16 text-center animate-fade-in">
-        <div className="mx-auto h-12 w-12 rounded-full bg-accent-50 text-accent grid place-items-center mb-4">
-          <Loader2 size={20} className="animate-spin" />
-        </div>
-        <div className="font-serif text-xl mb-1.5">Tahlil bajarilmoqda</div>
-        <p className="text-sm text-ink-muted">Sun'iy idrok ssenariyni mezonlar va qonunlar bo'yicha o'rganmoqda. Bu odatda 60–120 soniya davom etadi.</p>
-      </div>
-    );
+    return <AnalysisProgress startedAt={a.started_at || a.created_at} />;
   }
   if (a.status === "failed") {
     return (
@@ -60,7 +61,7 @@ export function AnalysisResult() {
             <AlertTriangle size={18} />
           </div>
           <div className="flex-1">
-            <h2 className="font-serif text-lg mb-1.5">Tahlil yakunlanmadi</h2>
+            <h2 className="font-serif text-lg mb-1.5">{t("analysis.failed")}</h2>
             <p className="text-sm text-ink-muted">{a.error_message}</p>
           </div>
         </div>
@@ -70,15 +71,28 @@ export function AnalysisResult() {
 
   const score = Number(a.overall_score || 0);
   const results = a.results || [];
-  const chartData = results.map((r) => ({
-    name: shorten(r.criterion_name || ""),
+  const flagged = a.flagged || [];
+
+  const radarData = results.map((r) => ({
+    name: shorten(r.criterion_name || "", 14),
     fullName: r.criterion_name,
     score: Number(r.score || 0),
     risk: r.risk_level as RiskLevel,
   }));
+
   const riskCounts = (["None", "Low", "Medium", "High"] as RiskLevel[]).map((lvl) => ({
     risk: lvl, count: results.filter((r) => r.risk_level === lvl).length,
   }));
+
+  // Filter + sort
+  const filteredResults = useMemo(() => {
+    let arr = [...results];
+    if (filter === "high") arr = arr.filter((r) => r.risk_level === "High");
+    if (filter === "flagged") arr = arr.filter((r) => flagged.some((f) => f.criterion_id === r.criterion_id));
+    if (sort === "score") arr.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+    if (sort === "risk") arr.sort((a, b) => RISK_RANK[b.risk_level] - RISK_RANK[a.risk_level]);
+    return arr;
+  }, [results, flagged, filter, sort]);
 
   async function downloadPdf() {
     const res = await fetch(`${API_BASE_URL}/analyses/${id}/report`, {
@@ -96,19 +110,19 @@ export function AnalysisResult() {
   return (
     <div className="space-y-7 animate-fade-in">
       <Link to={`/documents/${a.document_id}`} className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink">
-        <ArrowLeft size={14} /> Ssenariyga qaytish
+        <ArrowLeft size={14} /> {t("doc.back")}
       </Link>
 
       <header className="flex items-start justify-between gap-6">
         <div className="min-w-0">
-          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">Tahlil natijasi</p>
+          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">{t("analysis.section")}</p>
           <h1 className="font-serif text-[24px] leading-tight text-balance">{docQ.data?.title}</h1>
           <div className="text-[12px] text-ink-subtle mt-2 tabular-nums">
-            Model: {a.model_used} · Tokenlar: {a.tokens_used?.toLocaleString("uz-UZ")}
+            {t("analysis.model")}: {a.model_used} · {t("analysis.tokens")}: {a.tokens_used?.toLocaleString()}
           </div>
         </div>
         <button onClick={downloadPdf} className="btn-primary shrink-0">
-          <Download size={15} strokeWidth={2} /> PDF eksport
+          <Download size={15} strokeWidth={2} /> {t("analysis.pdf")}
         </button>
       </header>
 
@@ -118,17 +132,15 @@ export function AnalysisResult() {
           <div>
             <div className="flex items-center gap-3 mb-4">
               <RiskBadge level={a.overall_risk} />
-              <span className="text-[12.5px] text-ink-subtle">Umumiy xulosa</span>
+              <span className="text-[12.5px] text-ink-subtle">{t("analysis.summary")}</span>
             </div>
             <p className="text-[15px] leading-relaxed text-ink text-pretty">{a.summary}</p>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-1 gap-4 lg:min-w-[170px]">
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 lg:min-w-[170px]">
             {riskCounts.map((r) => (
               <div key={r.risk} className="flex items-center gap-2.5">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: RISK_COLOR[r.risk] }} />
-                <span className="text-[12.5px] text-ink-muted flex-1">
-                  {r.risk === "None" ? "Yo'q" : r.risk === "Low" ? "Past" : r.risk === "Medium" ? "O'rta" : "Yuqori"}
-                </span>
+                <span className="text-[12.5px] text-ink-muted flex-1">{t(`risk.${r.risk}`)}</span>
                 <span className="text-[14px] font-serif tabular-nums">{r.count}</span>
               </div>
             ))}
@@ -138,45 +150,79 @@ export function AnalysisResult() {
 
       {results.length > 0 && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          {/* Yangi bar chart — horizontal, har bir mezon uchun progress bar */}
           <div className="card p-6">
             <div className="flex items-baseline justify-between mb-4">
-              <h3 className="font-serif text-lg">Mezonlar bo'yicha ballar</h3>
-              <span className="text-[12px] text-ink-muted">{results.length} ta</span>
+              <h3 className="font-serif text-lg">{t("analysis.scores")}</h3>
+              <span className="text-[12px] text-ink-muted">{results.length}</span>
             </div>
-            <div className="h-80">
-              <ResponsiveContainer>
-                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 50 }}>
-                  <XAxis dataKey="name" angle={-25} textAnchor="end" interval={0} height={70}
-                         stroke="#9CA3AF" fontSize={11.5} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 100]} stroke="#9CA3AF" fontSize={11.5} tickLine={false} axisLine={false} />
-                  <Tooltip
-                    cursor={{ fill: "rgba(15,118,110,0.05)" }}
-                    contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 8px 24px rgba(16,24,40,0.12)", fontSize: 13 }}
-                    formatter={(v: any, _n, p: any) => [`${v}`, p.payload.fullName]}
-                  />
-                  <Bar dataKey="score" radius={[6, 6, 0, 0]}>
-                    {chartData.map((d, i) => <Cell key={i} fill={RISK_COLOR[d.risk]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-1">
+              {[...results].sort((a, b) => Number(b.score || 0) - Number(a.score || 0)).map((r) => {
+                const sc = Number(r.score || 0);
+                const color = RISK_COLOR[r.risk_level] || RISK_COLOR.None;
+                return (
+                  <div key={r.id} className="group">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[13px] text-ink truncate flex-1">{r.criterion_name}</span>
+                      <span
+                        className="text-[12px] font-mono tabular-nums font-semibold"
+                        style={{ color }}
+                      >{sc.toFixed(1)}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-surface-sunken rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${Math.max(2, sc)}%`, backgroundColor: color }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
+          {/* Radar — yaxshilangan */}
           <div className="card p-6">
             <div className="flex items-baseline justify-between mb-4">
-              <h3 className="font-serif text-lg">Risk profili</h3>
-              <span className="text-[12px] text-ink-muted">Radar</span>
+              <h3 className="font-serif text-lg">{t("analysis.radar")}</h3>
+              <span className="text-[12px] text-ink-muted">{results.length}</span>
             </div>
-            <div className="h-80">
+            <div className="h-[400px]">
               <ResponsiveContainer>
-                <RadarChart data={chartData}>
-                  <PolarGrid stroke="#EEEEEA" />
-                  <PolarAngleAxis dataKey="name" stroke="#6B7280" fontSize={11} />
-                  <PolarRadiusAxis domain={[0, 100]} angle={90} stroke="#D1D5DB" fontSize={10} tickCount={4} />
-                  <Radar name="Ball" dataKey="score" stroke="#0F766E" strokeWidth={1.5} fill="#0F766E" fillOpacity={0.18} />
+                <RadarChart data={radarData} margin={{ top: 16, right: 30, left: 30, bottom: 8 }}>
+                  <PolarGrid stroke="#E5E5E1" strokeDasharray="2 4" />
+                  <PolarAngleAxis
+                    dataKey="name"
+                    tick={({ payload, x, y, textAnchor }: any) => (
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor={textAnchor}
+                        fill="#4B5563"
+                        fontSize={11}
+                        fontWeight={500}
+                      >
+                        {payload.value}
+                      </text>
+                    )}
+                  />
+                  <Radar
+                    name="Score"
+                    dataKey="score"
+                    stroke="#0F766E"
+                    strokeWidth={2}
+                    fill="#0F766E"
+                    fillOpacity={0.22}
+                    dot={{ fill: "#0F766E", r: 3 }}
+                  />
                   <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 8px 24px rgba(16,24,40,0.12)", fontSize: 13 }}
-                    formatter={(v: any, _n, p: any) => [`${v}`, p.payload.fullName]}
+                    contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 8px 24px rgba(16,24,40,0.12)", fontSize: 13, padding: "8px 12px" }}
+                    formatter={(v: any, _n, p: any) => [
+                      <span key="v" className="font-mono tabular-nums" style={{ color: RISK_COLOR[p.payload.risk] }}>
+                        {Number(v).toFixed(1)} / 100
+                      </span>,
+                      p.payload.fullName,
+                    ]}
                   />
                 </RadarChart>
               </ResponsiveContainer>
@@ -185,35 +231,66 @@ export function AnalysisResult() {
         </div>
       )}
 
+      {/* Mezonlar tafsiloti + filter */}
       <div className="card overflow-hidden">
-        <div className="px-6 py-5 flex items-baseline justify-between">
-          <h2 className="font-serif text-lg">Mezonlar bo'yicha tafsilot</h2>
-          <span className="text-[12px] text-ink-muted">Tavsiya va asoslar bilan</span>
+        <div className="px-6 py-5 flex flex-wrap items-center gap-4 justify-between">
+          <h2 className="font-serif text-lg">{t("analysis.by_criterion")}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <Filter size={14} className="text-ink-muted" />
+            {([
+              { v: "all", l: t("analysis.filter_all") },
+              { v: "high", l: t("analysis.filter_high") },
+              { v: "flagged", l: t("analysis.filter_with_flag") },
+            ] as const).map((f) => (
+              <button
+                key={f.v}
+                onClick={() => setFilter(f.v)}
+                className={cn(
+                  "h-8 px-3 rounded-full text-[12.5px] transition",
+                  filter === f.v ? "bg-accent text-white" : "bg-surface-sunken text-ink-muted hover:text-ink",
+                )}
+              >{f.l}</button>
+            ))}
+            <span className="mx-1 h-4 w-px bg-ink/10" />
+            {([
+              { v: "risk", l: t("analysis.sort_by_risk") },
+              { v: "score", l: t("analysis.sort_by_score") },
+            ] as const).map((s) => (
+              <button
+                key={s.v}
+                onClick={() => setSort(s.v)}
+                className={cn(
+                  "h-8 px-3 rounded-full text-[12.5px] transition",
+                  sort === s.v ? "bg-ink/10 text-ink" : "text-ink-muted hover:text-ink",
+                )}
+              >{s.l}</button>
+            ))}
+          </div>
         </div>
         <ul className="surface-divider divide-y divide-ink/[0.05]">
-          {results.map((r) => (
+          {filteredResults.map((r) => (
             <li key={r.id} className="px-6 py-5 hover:bg-surface-sunken/40 transition">
               <div className="flex flex-wrap items-baseline gap-3 mb-2">
                 <h4 className="font-serif text-[17px]">{r.criterion_name}</h4>
                 <RiskBadge level={r.risk_level} />
-                <span className="text-[12px] text-ink-muted ml-auto tabular-nums">Ball: {r.score?.toString()}</span>
+                <span className="text-[12px] text-ink-muted ml-auto tabular-nums">{t("analysis.score")}: {r.score?.toString()}</span>
               </div>
               {r.finding && (
                 <div className="text-[14px] text-ink leading-relaxed mt-2">
-                  <span className="text-ink-muted text-[12.5px] uppercase tracking-wide mr-2">Aniqlangan</span>
+                  <span className="text-ink-muted text-[12.5px] uppercase tracking-wide mr-2">{t("analysis.found")}</span>
                   {r.finding}
                 </div>
               )}
               {r.recommendation && (
                 <div className="text-[14px] text-ink-muted leading-relaxed mt-2">
-                  <span className="text-accent text-[12.5px] uppercase tracking-wide mr-2">Tavsiya</span>
+                  <span className="text-accent text-[12.5px] uppercase tracking-wide mr-2">{t("analysis.recommendation")}</span>
                   {r.recommendation}
                 </div>
               )}
             </li>
           ))}
-          {results.length === 0 && (
-            <li className="px-6 py-10 text-center text-ink-muted text-sm">Natijalar mavjud emas</li>
+          {filteredResults.length === 0 && (
+            <li className="px-6 py-10 text-center text-ink-muted text-sm">{t("common.empty")}</li>
           )}
         </ul>
       </div>
@@ -221,8 +298,8 @@ export function AnalysisResult() {
       {docQ.data?.extracted_text && (
         <div>
           <div className="flex items-baseline justify-between mb-4">
-            <h2 className="font-serif text-xl">Ssenariy matni</h2>
-            <span className="text-[12px] text-ink-muted">Belgilangan parchaga bosing</span>
+            <h2 className="font-serif text-xl">{t("analysis.text_highlighted")}</h2>
+            <span className="text-[12px] text-ink-muted">{t("analysis.click_segment")}</span>
           </div>
           <HighlightedText text={docQ.data.extracted_text} segments={a.flagged || []} />
         </div>

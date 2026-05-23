@@ -4,8 +4,10 @@ import { api } from "@/api/client";
 import type { Law } from "@/types";
 import { Trash2, Upload, BookOpen, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 export function Laws() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [docNumber, setDocNumber] = useState("");
@@ -42,12 +44,9 @@ export function Laws() {
   return (
     <div className="space-y-7 animate-fade-in">
       <header>
-        <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">Bilim bazasi</p>
-        <h1 className="font-serif text-[26px] leading-tight">Qonunlar bazasi</h1>
-        <p className="text-[13.5px] text-ink-muted mt-2 max-w-2xl">
-          Yuklangan qonun matnlari avtomatik <span className="text-ink">parchalanadi</span> va vektor bazaga indekslanadi.
-          Tahlil paytida AI ssenariyga semantik mos qonun bo'limlarini topib, huquqiy moslikni baholaydi.
-        </p>
+        <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">{t("laws.section")}</p>
+        <h1 className="font-serif text-[26px] leading-tight">{t("laws.title")}</h1>
+        <p className="text-[13.5px] text-ink-muted mt-2 max-w-2xl">{t("laws.hint")}</p>
       </header>
 
       <div className="card p-7">
@@ -55,23 +54,23 @@ export function Laws() {
           <span className="h-8 w-8 rounded-xl bg-accent-50 text-accent grid place-items-center">
             <Upload size={15} strokeWidth={1.75} />
           </span>
-          Yangi qonun yuklash
+          {t("laws.new")}
         </h2>
         <form onSubmit={(e) => { e.preventDefault(); if (file && title) upload.mutate(); }} className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
-            <label className="label">Qonun nomi *</label>
-            <input className="input" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Masalan: Kinematografiya to'g'risida" />
+            <label className="label">{t("laws.law_name")}</label>
+            <input className="input" required value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div>
-            <label className="label">Hujjat raqami</label>
-            <input className="input" value={docNumber} onChange={(e) => setDocNumber(e.target.value)} placeholder="ORQ-NN" />
+            <label className="label">{t("laws.doc_number")}</label>
+            <input className="input" value={docNumber} onChange={(e) => setDocNumber(e.target.value)} />
           </div>
           <div>
-            <label className="label">Kategoriya</label>
-            <input className="input" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Madaniyat / Migratsiya / ..." />
+            <label className="label">{t("laws.category")}</label>
+            <input className="input" value={category} onChange={(e) => setCategory(e.target.value)} />
           </div>
           <div className="md:col-span-2">
-            <label className="label">Fayl</label>
+            <label className="label">{t("laws.file")}</label>
             <label className="flex items-center gap-3 h-11 px-3.5 rounded-xl bg-surface-sunken cursor-pointer hover:bg-ink/5 transition">
               <Upload size={15} className="text-ink-muted" />
               <span className="text-sm text-ink-muted truncate">{file ? file.name : ".doc, .docx, .pdf, .txt"}</span>
@@ -83,7 +82,7 @@ export function Laws() {
               <div className="text-sm text-risk-high-fg flex-1">{err}</div>
             ) : <div className="flex-1" />}
             <button disabled={!file || !title || upload.isPending} className="btn-primary">
-              <Upload size={15} /> {upload.isPending ? "Indekslanmoqda..." : "Yuklash va indekslash"}
+              <Upload size={15} /> {upload.isPending ? t("laws.indexing") : t("laws.upload")}
             </button>
           </div>
         </form>
@@ -91,8 +90,8 @@ export function Laws() {
 
       <div className="card overflow-hidden">
         <div className="px-6 py-5 flex items-center justify-between">
-          <h2 className="font-serif text-lg">Indekslangan qonunlar</h2>
-          <span className="text-[12px] text-ink-muted">{items.length} ta</span>
+          <h2 className="font-serif text-lg">{t("laws.indexed")}</h2>
+          <span className="text-[12px] text-ink-muted">{items.length}</span>
         </div>
         <div className="surface-divider">
           {items.map((l) => (
@@ -110,17 +109,17 @@ export function Laws() {
               </div>
               {l.is_active && (
                 <span className="chip bg-accent-50 text-accent-700">
-                  <CheckCircle2 size={12} /> Faol
+                  <CheckCircle2 size={12} /> {t("users.active")}
                 </span>
               )}
               <button
-                onClick={() => confirm("Bazadan olib tashlansinmi?") && del.mutate(l.id)}
+                onClick={() => confirm(t("common.confirm_delete")) && del.mutate(l.id)}
                 className="btn-ghost h-9 w-9 p-0 hover:text-risk-high-fg"
               ><Trash2 size={14} strokeWidth={1.75} /></button>
             </div>
           ))}
           {items.length === 0 && (
-            <div className="px-6 py-12 text-center text-ink-muted text-sm">Hozircha qonun yuklanmagan</div>
+            <div className="px-6 py-12 text-center text-ink-muted text-sm">{t("laws.empty")}</div>
           )}
         </div>
       </div>

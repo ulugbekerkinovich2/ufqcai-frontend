@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   accept?: string;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function FileUploader({ accept = ".doc,.docx,.pdf", onFile, loading }: Props) {
+  const { t } = useI18n();
   const [drag, setDrag] = useState(false);
   const ref = useRef<HTMLInputElement>(null);
 
@@ -32,8 +34,8 @@ export function FileUploader({ accept = ".doc,.docx,.pdf", onFile, loading }: Pr
       <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-accent-50 flex items-center justify-center text-accent transition group-hover:scale-105">
         <UploadCloud size={22} strokeWidth={1.75} />
       </div>
-      <p className="font-medium text-ink">Faylni shu yerga torting yoki tanlash uchun bosing</p>
-      <p className="text-sm text-ink-muted mt-1.5">.doc, .docx, .pdf · maks. 25 MB</p>
+      <p className="font-medium text-ink">{t("documents.upload_hint")}</p>
+      <p className="text-sm text-ink-muted mt-1.5">{t("documents.upload_meta")}</p>
       <input ref={ref} type="file" accept={accept} className="hidden"
              onChange={(e) => handleFiles(e.target.files)} />
     </div>

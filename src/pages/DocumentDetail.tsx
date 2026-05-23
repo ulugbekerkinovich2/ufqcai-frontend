@@ -5,8 +5,10 @@ import type { Document, Analysis } from "@/types";
 import { formatDate } from "@/lib/utils";
 import { ArrowLeft, Play, Eye, FileText } from "lucide-react";
 import { RiskBadge } from "@/components/shared/RiskBadge";
+import { useI18n } from "@/lib/i18n";
 
 export function DocumentDetail() {
+  const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
 
@@ -25,19 +27,19 @@ export function DocumentDetail() {
     onSuccess: (a) => nav(`/analyses/${a.id}`),
   });
 
-  if (!docQ.data) return <div className="text-ink-muted">Yuklanmoqda...</div>;
+  if (!docQ.data) return <div className="text-ink-muted">{t("common.loading")}</div>;
   const d = docQ.data;
   const history = histQ.data || [];
 
   return (
     <div className="space-y-7 animate-fade-in">
       <Link to="/documents" className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted hover:text-ink">
-        <ArrowLeft size={14} /> Ssenariylarga qaytish
+        <ArrowLeft size={14} /> {t("doc.back")}
       </Link>
 
       <header className="flex items-start justify-between gap-6">
         <div className="min-w-0">
-          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">Ssenariy</p>
+          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">{t("doc.section")}</p>
           <h1 className="font-serif text-[24px] leading-tight text-balance">{d.title}</h1>
           <div className="flex flex-wrap items-center gap-3 mt-3 text-[13px] text-ink-muted">
             <span className="inline-flex items-center gap-1.5"><FileText size={13} /> {d.original_name}</span>
@@ -54,37 +56,37 @@ export function DocumentDetail() {
           className="btn-primary shrink-0"
         >
           <Play size={15} strokeWidth={2} fill="currentColor" />
-          {analyze.isPending ? "Boshlanmoqda..." : history.length > 0 ? "Qayta tahlil qilish" : "Tahlilni ishga tushirish"}
+          {analyze.isPending ? t("doc.starting") : history.length > 0 ? t("doc.reanalyze") : t("doc.analyze")}
         </button>
       </header>
 
       <div className="card p-7">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-serif text-lg">Ssenariy matni</h2>
+          <h2 className="font-serif text-lg">{t("doc.text")}</h2>
           <span className="text-[12px] text-ink-subtle">
-            {(d.extracted_text || "").length.toLocaleString("uz-UZ")} belgi
+            {(d.extracted_text || "").length.toLocaleString()}
           </span>
         </div>
         <div className="bg-surface rounded-xl p-5 max-h-[460px] overflow-auto">
           <pre className="whitespace-pre-wrap text-[14px] font-sans leading-[1.85] text-ink">
-            {d.extracted_text || <span className="text-ink-subtle">Matn ajratib olinmadi</span>}
+            {d.extracted_text || <span className="text-ink-subtle">{t("doc.text_empty")}</span>}
           </pre>
         </div>
       </div>
 
       <div className="card overflow-hidden">
         <div className="px-6 py-5 flex items-center justify-between">
-          <h2 className="font-serif text-lg">Tahlil tarixi</h2>
-          <span className="text-[12px] text-ink-muted">{history.length} ta</span>
+          <h2 className="font-serif text-lg">{t("doc.history")}</h2>
+          <span className="text-[12px] text-ink-muted">{history.length}</span>
         </div>
         <div className="surface-divider">
           <table className="w-full">
             <thead>
               <tr className="text-[12px] uppercase tracking-wide text-ink-muted">
-                <th className="text-left font-medium px-6 py-3">Sana</th>
-                <th className="text-left font-medium py-3">Status</th>
-                <th className="text-left font-medium py-3">Risk</th>
-                <th className="text-left font-medium py-3">Ball</th>
+                <th className="text-left font-medium px-6 py-3">{t("common.date")}</th>
+                <th className="text-left font-medium py-3">{t("common.status")}</th>
+                <th className="text-left font-medium py-3">{t("risk.None").split("'")[0]}</th>
+                <th className="text-left font-medium py-3">{t("analysis.score")}</th>
                 <th className="py-3"></th>
               </tr>
             </thead>
@@ -92,18 +94,18 @@ export function DocumentDetail() {
               {history.map((a) => (
                 <tr key={a.id} className="table-row border-t border-ink/[0.05] hover:bg-surface-sunken/50">
                   <td className="px-6 text-[13.5px] text-ink">{formatDate(a.created_at)}</td>
-                  <td><span className="chip bg-surface-sunken text-ink-muted">{a.status}</span></td>
+                  <td><span className="chip bg-surface-sunken text-ink-muted">{t(`status.${a.status}`)}</span></td>
                   <td>{a.overall_risk ? <RiskBadge level={a.overall_risk} /> : <span className="text-ink-subtle text-sm">—</span>}</td>
                   <td className="text-[14px] font-serif tabular-nums">{a.overall_score?.toString() || "—"}</td>
                   <td className="pr-6 text-right">
                     <Link to={`/analyses/${a.id}`} className="btn-ghost h-8 px-2.5 text-[12.5px]">
-                      <Eye size={14} /> Ko'rish
+                      <Eye size={14} /> {t("common.view")}
                     </Link>
                   </td>
                 </tr>
               ))}
               {history.length === 0 && (
-                <tr><td colSpan={5} className="px-6 py-10 text-center text-ink-muted text-sm">Tahlillar mavjud emas</td></tr>
+                <tr><td colSpan={5} className="px-6 py-10 text-center text-ink-muted text-sm">{t("common.empty")}</td></tr>
               )}
             </tbody>
           </table>

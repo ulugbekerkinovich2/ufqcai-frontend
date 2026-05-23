@@ -4,6 +4,7 @@ import { api } from "@/api/client";
 import type { Criterion } from "@/types";
 import { Pencil, Plus, X, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 interface FormData {
   name: string;
@@ -25,6 +26,7 @@ const CAT_MAP: Record<string, { label: string; cls: string }> = {
 };
 
 export function Criteria() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Criterion | null>(null);
   const [open, setOpen] = useState(false);
@@ -149,40 +151,40 @@ export function Criteria() {
             </div>
             <form onSubmit={(e) => { e.preventDefault(); save.mutate(form); }} className="p-7 space-y-5">
               <div>
-                <label className="label">Nomi</label>
+                <label className="label">{t("criteria.name")}</label>
                 <input className="input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               </div>
               <div>
-                <label className="label">Qisqacha tavsif</label>
+                <label className="label">{t("criteria.description")}</label>
                 <textarea className="textarea" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
               </div>
               <div>
-                <label className="label">AI uchun ko'rsatma</label>
+                <label className="label">{t("criteria.instruction")}</label>
                 <textarea className="textarea" rows={5} required value={form.ai_instruction} onChange={(e) => setForm({ ...form, ai_instruction: e.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Kategoriya</label>
+                  <label className="label">{t("criteria.category")}</label>
                   <select className="input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
-                    <option value="cultural">Madaniy</option>
-                    <option value="legal">Huquqiy</option>
-                    <option value="content">Kontent</option>
+                    <option value="cultural">{t("criteria.cat_cultural")}</option>
+                    <option value="legal">{t("criteria.cat_legal")}</option>
+                    <option value="content">{t("criteria.cat_content")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="label">Og'irligi</label>
+                  <label className="label">{t("criteria.weight")}</label>
                   <input type="number" step="0.1" className="input tabular-nums" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
                 </div>
               </div>
               <label className="flex items-center gap-2.5 cursor-pointer select-none">
                 <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                        className="h-4 w-4 rounded accent-accent" />
-                <span className="text-sm text-ink">Tahlilda foydalanish (faol)</span>
+                <span className="text-sm text-ink">{t("criteria.active")}</span>
               </label>
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setOpen(false)} className="btn-secondary flex-1">Bekor qilish</button>
+                <button type="button" onClick={() => setOpen(false)} className="btn-secondary flex-1">{t("common.cancel")}</button>
                 <button disabled={save.isPending} className="btn-primary flex-1">
-                  {save.isPending ? "Saqlanmoqda..." : "Saqlash"}
+                  {save.isPending ? t("common.loading") : t("common.save")}
                 </button>
               </div>
             </form>

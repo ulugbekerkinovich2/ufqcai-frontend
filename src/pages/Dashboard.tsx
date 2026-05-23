@@ -8,48 +8,60 @@ import { Link } from "react-router-dom";
 import { RiskBadge } from "@/components/shared/RiskBadge";
 import { formatDate } from "@/lib/utils";
 import { ArrowUpRight, FileText, ShieldCheck, Activity, Sparkles } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 const RISK_COLORS = ["#9CA3AF", "#D97706", "#EA580C", "#DC2626"];
 
 export function Dashboard() {
+  const { t } = useI18n();
   const docsQ = useQuery({
     queryKey: ["dash-docs"],
     queryFn: async () => (await api.get<Document[]>("/documents", { params: { limit: 30 } })).data,
   });
+  const statsQ = useQuery({
+    queryKey: ["dash-stats"],
+    queryFn: async () => (await api.get<{
+      total_documents: number;
+      analyses_in_progress: number;
+      analyses_completed: number;
+      avg_score: number;
+      by_risk: { risk: string; count: number }[];
+    }>("/analyses-stats")).data,
+  });
 
   const items = docsQ.data || [];
+  const s = statsQ.data;
 
-  // Trend mock (so'nggi 7 kun)
+  // So'nggi 7 kun trendi — haqiqiy yuklash sanasiga ko'ra
   const trend = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    const day = d.toLocaleDateString("uz-UZ", { weekday: "short" });
-    return { day, count: Math.max(0, items.filter((it) => new Date(it.created_at).toDateString() === d.toDateString()).length) };
+    const day = d.toLocaleDateString(undefined, { weekday: "short" });
+    return { day, count: items.filter((it) => new Date(it.created_at).toDateString() === d.toDateString()).length };
   });
 
-  const pieData = [
-    { name: "Yo'q", value: 8, color: "#9CA3AF" },
-    { name: "Past", value: 5, color: "#D97706" },
-    { name: "O'rta", value: 3, color: "#EA580C" },
-    { name: "Yuqori", value: 2, color: "#DC2626" },
-  ];
+  const pieData = (s?.by_risk || []).map((r) => ({
+    name: t(`risk.${r.risk}`),
+    value: r.count,
+    color: r.risk === "None" ? "#9CA3AF" : r.risk === "Low" ? "#D97706" : r.risk === "Medium" ? "#EA580C" : "#DC2626",
+  }));
 
   const stats = [
-    { label: "Jami ssenariylar", value: items.length, icon: FileText, change: "+12% bu oy" },
-    { label: "Tahlilda", value: items.filter((d) => d.status === "analyzing").length, icon: Activity, change: "real vaqt" },
-    { label: "O'rtacha ball", value: 74, icon: Sparkles, change: "+3.2 punkt" },
-    { label: "Tahlil tugagan", value: items.filter((d) => d.status === "done" || d.status === "parsed").length, icon: ShieldCheck, change: "stabil" },
+    { label: t("dashboard.total_scenarios"), value: s?.total_documents ?? items.length, icon: FileText },
+    { label: t("dashboard.analyzing"), value: s?.analyses_in_progress ?? 0, icon: Activity },
+    { label: t("dashboard.avg_score"), value: s?.avg_score ?? 0, icon: Sparkles },
+    { label: t("dashboard.completed"), value: s?.analyses_completed ?? 0, icon: ShieldCheck },
   ];
 
   return (
     <div className="space-y-7 animate-fade-in">
       <header className="flex items-end justify-between">
         <div>
-          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">Umumiy ko'rinish</p>
-          <h1 className="font-serif text-[26px] leading-tight">Boshqaruv paneli</h1>
+          <p className="text-[12.5px] uppercase tracking-[0.14em] text-ink-muted mb-2">{t("dashboard.overview")}</p>
+          <h1 className="font-serif text-[26px] leading-tight">{t("dashboard.title")}</h1>
         </div>
         <Link to="/documents" className="btn-secondary">
-          Yangi ssenariy <ArrowUpRight size={15} />
+          {t("dashboard.new_script")} <ArrowUpRight size={15} />
         </Link>
       </header>
 
@@ -63,7 +75,6 @@ export function Dashboard() {
               </div>
             </div>
             <div className="font-serif text-[34px] leading-none tabular-nums">{s.value}</div>
-            <div className="text-[12px] text-ink-subtle mt-2">{s.change}</div>
           </div>
         ))}
       </div>
@@ -71,8 +82,8 @@ export function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         <div className="card p-6 xl:col-span-2">
           <div className="flex items-baseline justify-between mb-5">
-            <h2 className="font-serif text-lg">Tahlil dinamikasi</h2>
-            <span className="text-[12px] text-ink-muted">So'nggi 7 kun</span>
+            <h2 className="font-serif text-lg">{t("dashboard.trend")}</h2>
+            <span className="text-[12px] text-ink-muted">{t("dashboard.last7")}</span>
           </div>
           <div className="h-64">
             <ResponsiveContainer>
@@ -97,8 +108,8 @@ export function Dashboard() {
 
         <div className="card p-6">
           <div className="flex items-baseline justify-between mb-3">
-            <h2 className="font-serif text-lg">Risk taqsimoti</h2>
-            <span className="text-[12px] text-ink-muted">Hozirgi holat</span>
+            <h2 className="font-serif text-lg">{t("dashboard.risk_distribution")}</h2>
+            <span className="text-[12px] text-ink-muted">{t("common.today")}</span>
           </div>
           <div className="h-44">
             <ResponsiveContainer>
@@ -124,18 +135,18 @@ export function Dashboard() {
 
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between px-6 py-5">
-          <h2 className="font-serif text-lg">So'nggi ssenariylar</h2>
+          <h2 className="font-serif text-lg">{t("dashboard.recent")}</h2>
           <Link to="/documents" className="text-[13px] text-accent hover:text-accent-700 inline-flex items-center gap-1">
-            Hammasi <ArrowUpRight size={13} />
+            {t("dashboard.all")} <ArrowUpRight size={13} />
           </Link>
         </div>
         <div className="surface-divider">
           <table className="w-full">
             <thead>
               <tr className="text-[12px] uppercase tracking-wide text-ink-muted">
-                <th className="text-left font-medium px-6 py-3">Nomi</th>
-                <th className="text-left font-medium py-3">Status</th>
-                <th className="text-left font-medium py-3">Sana</th>
+                <th className="text-left font-medium px-6 py-3">{t("documents.col_name")}</th>
+                <th className="text-left font-medium py-3">{t("documents.col_status")}</th>
+                <th className="text-left font-medium py-3">{t("documents.col_date")}</th>
                 <th></th>
               </tr>
             </thead>
@@ -158,7 +169,7 @@ export function Dashboard() {
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={4} className="px-6 py-10 text-center text-ink-muted text-sm">Hozircha ssenariy yo'q</td></tr>
+                <tr><td colSpan={4} className="px-6 py-10 text-center text-ink-muted text-sm">{t("common.empty")}</td></tr>
               )}
             </tbody>
           </table>

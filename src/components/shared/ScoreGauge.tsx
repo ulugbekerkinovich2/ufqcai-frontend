@@ -1,15 +1,17 @@
-const RISK_COLOR: Record<string, string> = {
-  High:   "#B91C1C",
-  Medium: "#D97706",
-  Low:    "#16A34A",
-  None:   "#0F766E",
-};
+function scoreColor(v: number): string {
+  if (v <= 15) return "#0284C7"; // sky blue  — very safe
+  if (v <= 30) return "#0EA5E9"; // light blue — safe
+  if (v <= 45) return "#16A34A"; // green      — ok
+  if (v <= 58) return "#CA8A04"; // yellow     — caution
+  if (v <= 70) return "#EA580C"; // orange     — elevated
+  if (v <= 82) return "#DC2626"; // red        — high risk
+  if (v <= 92) return "#991B1B"; // dark red   — critical
+  return "#450A0A";              // near-black — extreme
+}
 
-export function ScoreGauge({ value, riskLevel, size = 144 }: { value: number; riskLevel?: string; size?: number }) {
+export function ScoreGauge({ value, size = 144 }: { value: number; size?: number }) {
   const v = Math.max(0, Math.min(100, value));
-  const color = riskLevel
-    ? (RISK_COLOR[riskLevel] ?? "#0F766E")
-    : v >= 75 ? "#0F766E" : v >= 50 ? "#D97706" : "#B91C1C";
+  const color = scoreColor(v);
   const r = 52;
   const c = 2 * Math.PI * r;
   const off = c * (1 - v / 100);
@@ -24,7 +26,7 @@ export function ScoreGauge({ value, riskLevel, size = 144 }: { value: number; ri
           strokeDasharray={c}
           strokeDashoffset={off}
           strokeLinecap="round"
-          style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.4,0,0.2,1)" }}
+          style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.4,0,0.2,1), stroke 400ms ease" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center font-serif">

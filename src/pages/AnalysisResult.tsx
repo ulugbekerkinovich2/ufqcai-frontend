@@ -212,7 +212,7 @@ export function AnalysisResult() {
 
       <div className="card p-8">
         <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-8 items-center">
-          <ScoreGauge value={scorePct} riskLevel={a.overall_risk} />
+          <ScoreGauge value={scorePct} />
           <div>
             <div className="flex items-center gap-3 mb-4">
               <RiskBadge level={a.overall_risk} />

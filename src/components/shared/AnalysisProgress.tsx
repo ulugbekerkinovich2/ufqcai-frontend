@@ -187,7 +187,7 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
                     {current && (
                       <span className="inline-flex items-center gap-1 text-[11.5px] font-normal text-accent">
                         <Loader2 size={11} className="animate-spin" />
-                        <span className="font-mono tabular-nums">{pct}%</span>
+                        {pct > 0 && <span className="font-mono tabular-nums">{pct}%</span>}
                       </span>
                     )}
                   </div>
@@ -199,10 +199,14 @@ export function AnalysisProgress({ startedAt, analysisId }: { startedAt?: string
               {current && (
                 <div className="mt-2.5 ml-[3.125rem]">
                   <div className="h-1 w-full bg-surface-sunken rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-accent rounded-full transition-all duration-700 ease-out"
-                      style={{ width: `${pct}%` }}
-                    />
+                    {pct > 0 ? (
+                      <div
+                        className="h-full bg-accent rounded-full transition-all duration-700 ease-out"
+                        style={{ width: `${pct}%` }}
+                      />
+                    ) : (
+                      <div className="h-full w-1/3 bg-accent/50 rounded-full animate-pulse-soft" />
+                    )}
                   </div>
                 </div>
               )}

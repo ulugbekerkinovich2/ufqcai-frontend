@@ -33,7 +33,7 @@ export default {
           none: { bg: "#F3F4F6", fg: "#4B5563", dot: "#9CA3AF" },
           low: { bg: "#FEF7E6", fg: "#92660A", dot: "#D97706" },
           medium: { bg: "#FDEFE3", fg: "#9A4F1A", dot: "#EA580C" },
-          high: { bg: "#FDECEC", fg: "#9C2A2A", dot: "#DC2626" },
+          high: { bg: "#FEF3EE", fg: "#7C2D12", dot: "#C2410C" },
         },
       },
       fontFamily: {

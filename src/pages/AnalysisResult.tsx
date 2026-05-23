@@ -16,7 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const RISK_COLOR: Record<string, string> = {
-  None: "#9CA3AF", Low: "#D97706", Medium: "#EA580C", High: "#DC2626",
+  None: "#9CA3AF", Low: "#D97706", Medium: "#EA580C", High: "#C2410C",
 };
 const RISK_RANK: Record<string, number> = { None: 0, Low: 1, Medium: 2, High: 3 };
 

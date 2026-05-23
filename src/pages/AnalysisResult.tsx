@@ -60,19 +60,11 @@ export function AnalysisResult() {
     return maxScore > 10 ? 100 : 10;
   }, [results]);
 
-  const filteredResults = useMemo(() => {
-    // None'larni tafsilotda hech qachon ko'rsatmaymiz — faqat aniqlangan risklar.
-    let arr = results.filter((r) => r.risk_level !== "None");
-    if (filter === "high") arr = arr.filter((r) => r.risk_level === "High");
-    if (filter === "flagged") arr = arr.filter((r) => flagsForCriterion(r.criterion_id, r.criterion_name).length > 0);
-    if (sort === "score") arr.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
-    if (sort === "risk") arr.sort((a, b) => (RISK_RANK[b.risk_level] - RISK_RANK[a.risk_level]) || (Number(b.score || 0) - Number(a.score || 0)));
-    return arr;
-  }, [results, flagged, filter, sort]);
-
-  // Mezon → flagged segments (criterion_id yoki normalize qilingan name bo'yicha)
+  // Normalize helper + flagsByCriterion + flagsForCriterion — filteredResults'dan OLDIN
+  // (aks holda TDZ: filter='flagged' useMemo callback chaqirilganda flagsByCriterion hali undefined)
   const normalizeKey = (s?: string | null) =>
     (s || "").replace(/^\s*\d+\s*[.)]\s*/, "").trim().toLowerCase();
+
   const flagsByCriterion = useMemo(() => {
     const byId: Record<string, FlaggedSegment[]> = {};
     const byName: Record<string, FlaggedSegment[]> = {};
@@ -87,11 +79,23 @@ export function AnalysisResult() {
   }, [flagged]);
 
   function flagsForCriterion(cid?: string | null, cname?: string | null): FlaggedSegment[] {
-    if (cid && flagsByCriterion.byId[cid]) return flagsByCriterion.byId[cid];
-    const nk = normalizeKey(cname);
-    if (nk && flagsByCriterion.byName[nk]) return flagsByCriterion.byName[nk];
+    try {
+      if (cid && flagsByCriterion.byId[cid]) return flagsByCriterion.byId[cid];
+      const nk = normalizeKey(cname);
+      if (nk && flagsByCriterion.byName[nk]) return flagsByCriterion.byName[nk];
+    } catch {}
     return [];
   }
+
+  const filteredResults = useMemo(() => {
+    // None'larni tafsilotda ko'rsatmaymiz — faqat aniqlangan risklar.
+    let arr = results.filter((r) => r.risk_level !== "None");
+    if (filter === "high") arr = arr.filter((r) => r.risk_level === "High");
+    if (filter === "flagged") arr = arr.filter((r) => flagsForCriterion(r.criterion_id, r.criterion_name).length > 0);
+    if (sort === "score") arr.sort((a, b) => Number(b.score || 0) - Number(a.score || 0));
+    if (sort === "risk") arr.sort((a, b) => (RISK_RANK[b.risk_level] - RISK_RANK[a.risk_level]) || (Number(b.score || 0) - Number(a.score || 0)));
+    return arr;
+  }, [results, flagged, filter, sort, flagsByCriterion]);
 
   // ScrollIntoView segment'ga
   useEffect(() => {

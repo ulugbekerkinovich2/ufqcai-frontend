@@ -404,108 +404,90 @@ export function AnalysisResult() {
           </div>
         )}
 
-        {/* Criterion cards */}
-        <div className="p-5 space-y-4">
+        <ul className="divide-y divide-ink/[0.05]">
           {filteredResults.map((r) => {
             const segs = flagsForCriterion(r.criterion_id, r.criterion_name);
             const hasFlags = segs.length > 0;
             const recHidden = isNoChangeRec(r.recommendation) && !showHiddenRecs;
-            const borderColor = RISK_COLOR[r.risk_level] || RISK_COLOR.None;
             return (
-              <div
-                key={r.id}
-                className="rounded-2xl border border-ink/[0.08] overflow-hidden"
-                style={{ borderLeftColor: borderColor, borderLeftWidth: 3 }}
-              >
-                {/* Card header */}
-                <div className="px-5 py-4">
-                  <h4 className="font-serif text-[17px] leading-snug mb-2.5">{r.criterion_name}</h4>
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <RiskBadge level={r.risk_level} />
-                    <span className="text-[12px] text-ink-muted tabular-nums">
-                      {t("analysis.score")}: {r.score?.toString()} / {scoreMax}
-                    </span>
-                    {hasFlags && (
-                      <button
-                        onClick={() => jumpToCriterion(r.criterion_id, r.criterion_name)}
-                        className="chip bg-accent-50 text-accent-700 text-[11px] hover:bg-accent-100 transition"
-                      >
-                        <Search size={10} /> {t("analysis.find_in_text")} ({segs.length})
-                      </button>
-                    )}
-                  </div>
+              <li key={r.id} className="px-6 py-5 hover:bg-surface-sunken/40 transition">
+                <div className="flex flex-wrap items-baseline gap-3 mb-2">
+                  <h4 className="font-serif text-[17px]">{r.criterion_name}</h4>
+                  <RiskBadge level={r.risk_level} />
+                  {hasFlags && (
+                    <button
+                      onClick={() => jumpToCriterion(r.criterion_id, r.criterion_name)}
+                      className="chip bg-accent-50 text-accent-700 text-[11px] hover:bg-accent-100 transition"
+                    >
+                      <Search size={10} /> {t("analysis.find_in_text")} ({segs.length})
+                    </button>
+                  )}
+                  <span className="text-[12px] text-ink-muted ml-auto tabular-nums">
+                    {t("analysis.score")}: {r.score?.toString()} / {scoreMax}
+                  </span>
                 </div>
 
-                {/* Finding */}
                 {r.finding && (
-                  <div className="px-5 py-3.5 border-t border-ink/[0.06] bg-surface-sunken/20">
-                    <div className="text-[11px] uppercase tracking-[0.12em] text-ink-muted mb-1.5 font-medium">
-                      {t("analysis.found")}
-                    </div>
-                    <p className="text-[14px] text-ink leading-relaxed">{r.finding}</p>
+                  <div className="text-[14px] text-ink leading-relaxed mt-2">
+                    <span className="text-ink-muted text-[12.5px] uppercase tracking-wide mr-2">{t("analysis.found")}</span>
+                    {r.finding}
                   </div>
                 )}
 
-                {/* Evidence */}
                 {hasFlags && (
-                  <div className="px-5 py-3.5 border-t border-ink/[0.06]">
-                    <div className="text-[11px] uppercase tracking-[0.12em] text-ink-muted mb-2.5 font-medium">
+                  <div className="mt-4 space-y-2.5">
+                    <div className="text-[12px] uppercase tracking-wide text-ink-muted">
                       {t("analysis.evidence")} · {segs.length}
                     </div>
-                    <div className="space-y-2">
-                      {segs.slice(0, 5).map((seg) => {
-                        const color = RISK_COLOR[seg.risk_level || "Low"] || RISK_COLOR.Low;
-                        return (
-                          <button
-                            key={seg.id}
-                            onClick={() => setActiveSegment(seg)}
-                            className="block w-full text-left bg-surface-sunken/40 hover:bg-surface-sunken rounded-xl px-4 py-3 transition group"
-                          >
-                            <div className="flex items-start gap-2.5">
-                              <span className="h-1.5 w-1.5 rounded-full mt-2 shrink-0" style={{ background: color }} />
-                              <div className="flex-1 min-w-0">
-                                <blockquote
-                                  className="text-[13.5px] text-ink italic leading-relaxed border-l-2 pl-3"
-                                  style={{ borderColor: color }}
-                                >
-                                  «{seg.quote}»
-                                </blockquote>
-                                {seg.explanation && (
-                                  <div className="text-[12.5px] text-ink-muted mt-1.5 pl-3">
-                                    {seg.explanation}
-                                  </div>
-                                )}
-                              </div>
-                              <Search size={13} className="text-ink-subtle group-hover:text-accent shrink-0 mt-1" />
+                    {segs.slice(0, 5).map((seg) => {
+                      const color = RISK_COLOR[seg.risk_level || "Low"] || RISK_COLOR.Low;
+                      return (
+                        <button
+                          key={seg.id}
+                          onClick={() => setActiveSegment(seg)}
+                          className="block w-full text-left bg-surface-sunken/40 hover:bg-surface-sunken rounded-xl px-4 py-3 transition group"
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <span className="h-1.5 w-1.5 rounded-full mt-2 shrink-0" style={{ background: color }} />
+                            <div className="flex-1 min-w-0">
+                              <blockquote
+                                className="text-[13.5px] text-ink italic leading-relaxed border-l-2 pl-3"
+                                style={{ borderColor: color }}
+                              >
+                                «{seg.quote}»
+                              </blockquote>
+                              {seg.explanation && (
+                                <div className="text-[12.5px] text-ink-muted mt-1.5 pl-3">
+                                  {seg.explanation}
+                                </div>
+                              )}
                             </div>
-                          </button>
-                        );
-                      })}
-                      {segs.length > 5 && (
-                        <div className="text-[12px] text-ink-muted text-center pt-1">
-                          +{segs.length - 5} {t("analysis.more_evidence")}
-                        </div>
-                      )}
-                    </div>
+                            <Search size={13} className="text-ink-subtle group-hover:text-accent shrink-0 mt-1" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {segs.length > 5 && (
+                      <div className="text-[12px] text-ink-muted text-center pt-1">
+                        +{segs.length - 5} {t("analysis.more_evidence")}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Recommendation */}
                 {r.recommendation && !recHidden && (
-                  <div className="px-5 py-3.5 border-t border-ink/[0.06] bg-accent-50/20">
-                    <div className="text-[11px] uppercase tracking-[0.12em] text-accent mb-1.5 font-medium">
-                      {t("analysis.recommendation")}
-                    </div>
-                    <p className="text-[14px] text-ink-muted leading-relaxed">{r.recommendation}</p>
+                  <div className="text-[14px] text-ink-muted leading-relaxed mt-4 bg-accent-50/40 rounded-xl px-4 py-3">
+                    <span className="text-accent text-[12.5px] uppercase tracking-wide mr-2 font-medium">{t("analysis.recommendation")}</span>
+                    {r.recommendation}
                   </div>
                 )}
-              </div>
+              </li>
             );
           })}
           {filteredResults.length === 0 && (
-            <div className="py-10 text-center text-ink-muted text-sm">{t("common.empty")}</div>
+            <li className="px-6 py-10 text-center text-ink-muted text-sm">{t("common.empty")}</li>
           )}
-        </div>
+        </ul>
       </div>
 
       {docQ.data?.extracted_text && (

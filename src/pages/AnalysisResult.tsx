@@ -328,20 +328,20 @@ export function AnalysisResult() {
         </div>
         <ul className="surface-divider divide-y divide-ink/[0.05]">
           {filteredResults.map((r) => {
-            const hasFlags = flagsForCriterion(r.criterion_id, r.criterion_name).length > 0;
+            const segs = flagsForCriterion(r.criterion_id, r.criterion_name);
+            const hasFlags = segs.length > 0;
             return (
-              <li
-                key={r.id}
-                className="px-6 py-5 hover:bg-surface-sunken/40 transition cursor-pointer"
-                onClick={() => jumpToCriterion(r.criterion_id, r.criterion_name)}
-              >
+              <li key={r.id} className="px-6 py-5 hover:bg-surface-sunken/40 transition">
                 <div className="flex flex-wrap items-baseline gap-3 mb-2">
                   <h4 className="font-serif text-[17px]">{r.criterion_name}</h4>
                   <RiskBadge level={r.risk_level} />
                   {hasFlags && (
-                    <span className="chip bg-accent-50 text-accent-700 text-[11px]">
-                      <Search size={10} /> {t("analysis.find_in_text")}
-                    </span>
+                    <button
+                      onClick={() => jumpToCriterion(r.criterion_id, r.criterion_name)}
+                      className="chip bg-accent-50 text-accent-700 text-[11px] hover:bg-accent-100 transition"
+                    >
+                      <Search size={10} /> {t("analysis.find_in_text")} ({segs.length})
+                    </button>
                   )}
                   <span className="text-[12px] text-ink-muted ml-auto tabular-nums">
                     {t("analysis.score")}: {r.score?.toString()} / {scoreMax}
@@ -353,9 +353,52 @@ export function AnalysisResult() {
                     {r.finding}
                   </div>
                 )}
+
+                {/* Dalillar — AI keltirgan parchalar (ssenariy ichidan) */}
+                {hasFlags && (
+                  <div className="mt-4 space-y-2.5">
+                    <div className="text-[12px] uppercase tracking-wide text-ink-muted">
+                      {t("analysis.evidence")} · {segs.length}
+                    </div>
+                    {segs.slice(0, 5).map((seg) => {
+                      const color = RISK_COLOR[seg.risk_level || "Low"] || RISK_COLOR.Low;
+                      return (
+                        <button
+                          key={seg.id}
+                          onClick={() => setActiveSegment(seg)}
+                          className="block w-full text-left bg-surface-sunken/40 hover:bg-surface-sunken rounded-xl px-4 py-3 transition group"
+                        >
+                          <div className="flex items-start gap-2.5">
+                            <span className="h-1.5 w-1.5 rounded-full mt-2 shrink-0" style={{ background: color }} />
+                            <div className="flex-1 min-w-0">
+                              <blockquote
+                                className="text-[13.5px] text-ink italic leading-relaxed border-l-2 pl-3"
+                                style={{ borderColor: color }}
+                              >
+                                «{seg.quote}»
+                              </blockquote>
+                              {seg.explanation && (
+                                <div className="text-[12.5px] text-ink-muted mt-1.5 pl-3">
+                                  {seg.explanation}
+                                </div>
+                              )}
+                            </div>
+                            <Search size={13} className="text-ink-subtle group-hover:text-accent shrink-0 mt-1" />
+                          </div>
+                        </button>
+                      );
+                    })}
+                    {segs.length > 5 && (
+                      <div className="text-[12px] text-ink-muted text-center pt-1">
+                        +{segs.length - 5} {t("analysis.more_evidence")}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {r.recommendation && (
-                  <div className="text-[14px] text-ink-muted leading-relaxed mt-2">
-                    <span className="text-accent text-[12.5px] uppercase tracking-wide mr-2">{t("analysis.recommendation")}</span>
+                  <div className="text-[14px] text-ink-muted leading-relaxed mt-4 bg-accent-50/40 rounded-xl px-4 py-3">
+                    <span className="text-accent text-[12.5px] uppercase tracking-wide mr-2 font-medium">{t("analysis.recommendation")}</span>
                     {r.recommendation}
                   </div>
                 )}

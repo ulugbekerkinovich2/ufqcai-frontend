@@ -32,7 +32,10 @@ api.interceptors.response.use(
   (r) => r,
   async (error) => {
     const original = error.config;
-    if (error.response?.status === 401 && !original._retry) {
+    const status: number | undefined = error.response?.status;
+
+    // Token refresh
+    if (status === 401 && !original._retry) {
       original._retry = true;
       try {
         refreshing = refreshing || doRefresh();
@@ -46,6 +49,26 @@ api.interceptors.response.use(
         return Promise.reject(e);
       }
     }
+
+    // Network / server down — show toast (skip auth endpoints to avoid noise)
+    const isAuthCall = original?.url?.includes("/auth/");
+    if (!isAuthCall) {
+      if (!error.response) {
+        // No response = network error / server down
+        import("@/lib/toast").then(({ toast }) =>
+          toast.error("Server bilan bog'lanib bo'lmadi. Internetni tekshiring.")
+        );
+      } else if (status === 503 || status === 502 || status === 504) {
+        import("@/lib/toast").then(({ toast }) =>
+          toast.error("Server vaqtincha ishlamayapti. Biroz kutib qayta urinib ko'ring.")
+        );
+      } else if (status === 429) {
+        import("@/lib/toast").then(({ toast }) =>
+          toast.error("Juda ko'p so'rov yuborildi. Biroz kuting.")
+        );
+      }
+    }
+
     return Promise.reject(error);
   },
 );
